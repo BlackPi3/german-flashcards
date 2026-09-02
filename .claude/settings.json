@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__anki__notes_info",
+      "mcp__anki__model_styling",
+      "mcp__anki__update_note_fields",
+      "mcp__anki__tag_management",
+      "mcp__anki__find_notes",
+      "mcp__anki__add_note",
+      "mcp__anki__list_decks",
+      "mcp__anki__model_names",
+      "Edit(/.claude/skills/flashcard-maintenance/**)",
+      "WebFetch(domain:docs.claude.com)"
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+.DS_Store
+.claude/settings.local.json
+
+# Personal Anki backups, other people's decks, full-collection dumps —
+# not meant for the public repo. The point-in-time export lives in export/ instead.
+backup/
+
+# Course/textbook reference PDFs — not redistributing third-party material.
+todo/*.pdf
