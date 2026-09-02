@@ -14,34 +14,16 @@ cramming everything a textbook could theoretically throw at a learner.
 
 ## The cards
 
-Every card is built from the same three blocks, plus a version stamp:
+Every card is built from the same three blocks, plus a version stamp. Front,
+then the back — first collapsed, then with the reference tail expanded via
+the `Q` shortcut:
 
-```
-┌─ badge ─────────────────────────────────────────────────────
-│ Häufigkeit: hoch · Register: gesprochen
-└───────────────────────────────────────────────────────────────
-
-┌─ meaning box (mn) ─────────────────────────────────────────────
-│ Bedeutung: <German definition>
-│   → <English translation of the definition>
-│   → <short English gloss>
-│ „<example sentence>"
-│   → <English translation>
-└───────────────────────────────────────────────────────────────
-
-┌─ grammar box (gr) — always visible ─────────────────────────────
-│ <article + plural — or conjugation + Perfekt auxiliary>
-│ <valency pattern>
-│ „<example>"
-│   → <English translation>
-│
-│ ▸ Mehr: Wendungen, Synonyme, Antonyme (Taste: Q)   ← folded, collapsed by default
-│   Feste Wendungen · NVV · Kollokationen · Redemittel · Synonym · Antonym
-│                                        (click the toggle, or press Q, to expand)
-└───────────────────────────────────────────────────────────────
-
-v2.1.1                                              ← version stamp, closes the card
-```
+<table>
+<tr><td><img src="docs/images/card-front.png" width="280" alt="Card front: the German word 'Sorge'"></td>
+<td><img src="docs/images/card-back-collapsed.png" width="280" alt="Card back, fold collapsed"></td>
+<td><img src="docs/images/card-back-expanded.png" width="280" alt="Card back, fold expanded showing Feste Wendungen, NVV, Synonym, Antonym"></td></tr>
+<tr><td align="center">front</td><td align="center">back — fold collapsed</td><td align="center">back — fold expanded (<code>Q</code>)</td></tr>
+</table>
 
 - **Badge** — `Häufigkeit` (how common the word is: `hoch`/`mittel`/`niedrig`)
   and `Register` (how it's actually used: `gesprochen`/`neutral`/`eher
