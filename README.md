@@ -69,6 +69,39 @@ intervals) — see the comments at the top of the script.
 
 Every card is built from the same three blocks, plus a version stamp:
 
+```
+┌─ badge ─────────────────────────────────────────────────────
+│ Häufigkeit: hoch · Register: gesprochen
+└───────────────────────────────────────────────────────────────
+
+┌─ meaning box (mn) ─────────────────────────────────────────────
+│ Bedeutung: <German definition>
+│   → <English translation of the definition>
+│   → <short English gloss>
+│ „<example sentence>"
+│   → <English translation>
+└───────────────────────────────────────────────────────────────
+
+┌─ grammar box (gr) — always visible ─────────────────────────────
+│ <article + plural — or conjugation + Perfekt auxiliary>
+│ <valency pattern>
+│ „<example>"
+│   → <English translation>
+│
+│ ▸ Mehr: Wendungen, Synonyme, Antonyme (Taste: Q)   ← folded, collapsed by default
+│   Feste Wendungen · NVV · Kollokationen · Redemittel · Synonym · Antonym
+│                                        (click the toggle, or press Q, to expand)
+└───────────────────────────────────────────────────────────────
+
+v2.1.1                                              ← version stamp, closes the card
+```
+
+The fold exists because a review grade (Again/Hard/Good/Easy) needs one clear
+target: did I know the meaning and produce it correctly? Everything above the
+fold is that test. Everything inside it — fixed expressions, collocations,
+synonyms/antonyms — is depth material for building expertise, never something
+the grade depends on, so it stays out of the way until asked for.
+
 1. **Badge** — `Häufigkeit` (how common the word is: `hoch`/`mittel`/`niedrig`)
    and `Register` (how it's actually used: `gesprochen`/`neutral`/`eher
    schriftlich`/`Amtssprache`). Anything not already `gesprochen` must also
@@ -103,7 +136,7 @@ CLAUDE.md                          the full ruleset — content rules, card form
 .claude/reference/anki-stylesheet.md   the CSS the cards render with in Anki
 .claude/settings.json                  Claude Code permissions for this project
 loop.sh                             unattended overnight batch runner
-todo/card-redesign.md               design log behind the current card layout
+docs/card-redesign.md               design log behind the current card layout (closed/shipped)
 export/einfach-besser-500-b2.jsonl  a point-in-time export of the deck
 ```
 
@@ -116,8 +149,16 @@ truth, this is just what it looked like when exported.
 ## Requirements to run this yourself
 
 - [Claude Code](https://claude.com/claude-code)
-- Anki, with an MCP-compatible connector addon exposing `add_note`,
-  `update_note_fields`, `find_notes`, `notes_info`, and `tag_management`
-  against your collection
+- Anki, with the [AnkiMCP Server addon](https://github.com/ankimcp/anki-mcp-server-addon)
+  installed (`Tools → Add-ons → Get Add-ons`, code `124672614`). It runs an MCP
+  server inside Anki itself — no AnkiConnect needed — exposing `add_note`,
+  `update_note_fields`, `find_notes`, `notes_info`, `tag_management`, etc.
+  directly against your collection. See [ankimcp.ai](https://ankimcp.ai/docs/how-to/connect-claude/)
+  for wiring it up to Claude Code/Desktop.
 - A note type with `Front` / `Back` fields and the stylesheet from
   `.claude/reference/anki-stylesheet.md` in its Styling box
+
+## License
+
+[MIT](LICENSE) — use, copy, modify, and redistribute freely, attribution
+appreciated.

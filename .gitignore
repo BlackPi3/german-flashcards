@@ -6,4 +6,4 @@
 backup/
 
 # Course/textbook reference PDFs — not redistributing third-party material.
-todo/*.pdf
+docs/*.pdf

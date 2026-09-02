@@ -1,6 +1,6 @@
-# TODO: Card layout redesign — make reviewing fast and gradable
+# Card layout redesign — make reviewing fast and gradable (shipped)
 
-**Status:** fold + `Q` shortcut are live **deck-wide** as of 2026-09-01, via a template script — no per-note migration was needed. The grading rule is written into CLAUDE.md (Rule 25) and the rules version is bumped to **2.1.1**. Only the fold's Styling box CSS is still open — see "Session 2026-09-01" below.
+**Status: closed, everything shipped 2026-09-01.** Fold + `Q` shortcut are live **deck-wide** via a template script — no per-note migration was needed. The grading rule is written into CLAUDE.md (Rule 25), the rules version is bumped to **2.1.1**, and the fold's Styling box CSS is built. See "Session 2026-09-01" below for the full close-out.
 
 ---
 
