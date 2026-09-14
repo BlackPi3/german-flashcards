@@ -42,7 +42,7 @@ if (!window.__foldQBound) {
 }
 
 (function () {
-  var TAIL_CLASSES = ['tl-nom', 'tl-fw', 'tl-nvv', 'tl-kl', 'tl-rm', 'tl-syn', 'tl-ant'];
+  var TAIL_CLASSES = ['vl', 'tl-nom', 'tl-fw', 'tl-nvv', 'tl-kl', 'tl-rm', 'tl-syn', 'tl-ant'];
   document.querySelectorAll('.gr').forEach(function (gr) {
     if (gr.querySelector('details.fold')) return;
     var nodes = Array.prototype.slice.call(gr.childNodes);
@@ -55,14 +55,11 @@ if (!window.__foldQBound) {
       }
     }
     if (startIdx === -1) return;
-    if (startIdx > 0 && nodes[startIdx - 1].nodeType === 1 && nodes[startIdx - 1].tagName === 'BR') {
-      startIdx -= 1;
-    }
     var tailNodes = nodes.slice(startIdx);
     var details = document.createElement('details');
     details.className = 'fold';
     var summary = document.createElement('summary');
-    summary.textContent = 'Mehr: Wendungen, Synonyme, Antonyme (Taste: Q)';
+    summary.textContent = 'Mehr anzeigen (Taste: Q)';
     details.appendChild(summary);
     tailNodes.forEach(function (n) { details.appendChild(n); });
     gr.appendChild(details);
@@ -80,18 +77,24 @@ note's stored fields:
    duplicate listeners from stacking when Anki re-renders the same card
    (e.g. after an answer is shown).
 2. **Auto-fold on render.** For each `.gr` box, it finds the first child
-   carrying one of the reference-tail classes (`tl-nom`, `tl-fw`, `tl-nvv`,
-   `tl-kl`, `tl-rm`, `tl-syn`, `tl-ant`), takes that node and everything after
-   it (plus one preceding `<br>`, so the section gap collapses cleanly), and
-   moves them into a generated `<details class="fold">`. A `.gr` with no
-   tail content (⚙ Grammatikkarten, a Kurzkarte's minimal grammar box) is
-   left alone — there's nothing to fold.
+   carrying `vl` or one of the reference-tail classes (`tl-nom`, `tl-fw`,
+   `tl-nvv`, `tl-kl`, `tl-rm`, `tl-syn`, `tl-ant`), takes that node and
+   everything after it, and moves them into a generated
+   `<details class="fold">` with the summary "Mehr anzeigen (Taste: Q)".
+   Since `vl` always comes right after `bl`, only the `bl` line stays visible
+   (Rule 25, since v3.0.0). A `.gr` with nothing after `bl` is left alone —
+   there's nothing to fold.
+
+   The `<br>` just before the fold start stays *outside* the `<details>`.
+   Until v3.0.0 the script pulled it in, but `<summary>` already starts a new
+   line, so that `<br>` showed up as an empty line every time the fold was
+   opened.
 
 This is why folding needed **zero migration** across ~2,400 existing notes:
 the transformation runs once per render, driven purely by which CSS classes
 are already present in the `Back` field HTML, not by any per-note markup.
-Corollary: if you rename or add a `tl-*` class, add it to `TAIL_CLASSES` here
-or it silently stays outside the fold.
+Corollary: if you rename or add a `vl`/`tl-*` class, add it to `TAIL_CLASSES`
+here or it silently stays outside the fold.
 
 **Why this lives in the template and not the field:** Anki strips
 `<script>` tags from note field content on save (a sanitization pass) even
