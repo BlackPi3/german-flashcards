@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 # loop.sh — run flashcard-maintenance in a fresh Claude Code session, N times.
 #
+# Runs only STAGE changes (files under staged/) — nothing is written to Anki,
+# so you can keep studying while it runs. Push the staged changes into Anki
+# later, when you're not studying:
+#
 # Usage:
-#   ./loop.sh <number-of-runs>
+#   ./loop.sh <number-of-runs>    stage rebuilds (Anki is only read)
+#   ./loop.sh status              what is staged and waiting
+#   ./loop.sh apply [--dry-run]   write everything staged into Anki (Anki must be open)
 #
 # Tunables (env vars):
 #   MODEL          model to use              (default: sonnet)
 #   EFFORT         low|medium|high|xhigh|max (default: high)
 #   PROMPT         prompt sent each run       (default: flashcard-maintenance skill, 50 notes)
-#   ALLOWED_TOOLS  tools the prompt may use  (default: Skill,Agent,Read,Bash,mcp__anki)
+#   ALLOWED_TOOLS  tools the prompt may use  (default: Skill,Agent,Read,Write,Bash,
+#                  mcp__anki__find_notes,mcp__anki__notes_info)
+#   DENIED_TOOLS   hard-blocked, so no run can write to Anki (default: every Anki write tool)
 #   SLEEP_ON_LIMIT seconds to wait when rate limited (default: 3600)
 #   SLEEP_BETWEEN  seconds to wait between sessions (default: 2)
 #   PRETTY         1 = live filtered stream, 0 = plain final text (default: 1)
@@ -19,12 +27,25 @@
 
 set -uo pipefail
 
-RUNS="${1:?Usage: $0 <number-of-runs>}"
+cd "$(dirname "$0")"
+
+case "${1:-}" in
+  apply)  shift; exec python3 anki_stage.py apply "$@" ;;
+  status) exec python3 anki_stage.py status ;;
+esac
+
+RUNS="${1:?Usage: $0 <number-of-runs> | status | apply [--dry-run]}"
 
 MODEL="${MODEL:-sonnet}"
 EFFORT="${EFFORT:-high}"
-PROMPT="${PROMPT:-Use the flashcard-maintenance skill to migrate 50 notes.}"
-ALLOWED_TOOLS="${ALLOWED_TOOLS:-Skill,Agent,Read,Bash,mcp__anki}"
+PROMPT="${PROMPT:-Use the flashcard-maintenance skill to stage 50 notes. Do not apply.}"
+ALLOWED_TOOLS="${ALLOWED_TOOLS:-Skill,Agent,Read,Write,Bash,mcp__anki__find_notes,mcp__anki__notes_info}"
+ANKI_WRITES="update_note_fields update_notes add_note add_notes tag_management delete_notes change_note_type"
+DENIED_DEFAULT=""
+for t in $ANKI_WRITES; do
+  DENIED_DEFAULT+="mcp__anki__$t,mcp__claude_ai_AnkiMCP__$t,"
+done
+DENIED_TOOLS="${DENIED_TOOLS:-${DENIED_DEFAULT%,}}"
 SLEEP_ON_LIMIT="${SLEEP_ON_LIMIT:-3600}"
 SLEEP_BETWEEN="${SLEEP_BETWEEN:-2}"
 PRETTY="${PRETTY:-1}"
@@ -65,6 +86,7 @@ while (( i < RUNS )); do
     claude -p "$PROMPT" \
         --model "$MODEL" \
         --allowedTools "$ALLOWED_TOOLS" \
+        --disallowedTools "$DENIED_TOOLS" \
         --verbose --output-format stream-json 2>&1 \
       | tee "$RAW" \
       | jq -r --unbuffered '
@@ -81,7 +103,8 @@ while (( i < RUNS )); do
   else
     claude -p "$PROMPT" \
         --model "$MODEL" \
-        --allowedTools "$ALLOWED_TOOLS" 2>&1 \
+        --allowedTools "$ALLOWED_TOOLS" \
+        --disallowedTools "$DENIED_TOOLS" 2>&1 \
       | tee "$RAW"
     status=${PIPESTATUS[0]}
   fi
@@ -114,3 +137,5 @@ done
 
 echo ""
 echo "${GREEN}All $RUNS runs completed.${OFF}"
+python3 anki_stage.py status
+echo "Nothing is in Anki yet — run ${CYAN}./loop.sh apply${OFF} when you're not studying."

@@ -7,3 +7,6 @@ backup/
 
 # Course/textbook reference PDFs — not redistributing third-party material.
 docs/*.pdf
+
+# Maintenance changes staged for Anki — transient, applied with ./loop.sh apply.
+staged/

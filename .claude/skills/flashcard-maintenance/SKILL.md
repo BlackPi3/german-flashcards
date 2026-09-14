@@ -1,6 +1,6 @@
 ---
 name: flashcard-maintenance
-description: Migrate stale notes in the Anki deck "Einfach Besser! 500 B2" up to CLAUDE.md's current Rules Version. Takes the number of notes to process this run as an argument (default 5); counts above 5 are split into batches of 5, one subagent per batch. Use when the user asks to continue backlog maintenance, rework stale cards, or bring the deck up to the current rules version. Typically driven by /loop during an attended Anki session.
+description: Migrate stale notes in the Anki deck "Einfach Besser! 500 B2" up to CLAUDE.md's current Rules Version. Rebuilds are staged as local files under staged/ instead of being written to Anki, so the user can keep studying; `apply` pushes them into Anki on command. Takes the number of notes to process this run as an argument (default 5), or `apply` / `status`; counts above 5 are split into batches of 5, one subagent per batch. Use when the user asks to continue backlog maintenance, rework stale cards, bring the deck up to the current rules version, or apply/submit staged maintenance changes.
 ---
 
 # Flashcard backlog maintenance
@@ -13,10 +13,48 @@ The queue is **self-consuming**: a rebuilt note gets the current `Regeln::`
 tag, which drops it out of the backlog query. Never keep a separate list of
 processed notes; re-query every cycle.
 
+## Stage, don't write
+
+**A maintenance run never writes to Anki.** Writing while the user studies
+locks them out of reviewing, so every rebuild and every companion/bonus card is
+**staged as files** under `staged/pending/` and pushed into Anki later, in one
+go, when the user asks for it. During a run Anki is only *read*
+(`find_notes`, `notes_info`); `update_note_fields`, `add_note` and
+`tag_management` are never called by this skill.
+
+The mechanics live in `anki_stage.py` at the repo root (run it with `--help`
+for the file format):
+
+| Command | Does |
+|---|---|
+| `python3 anki_stage.py status` | counts staged rebuilds / new notes / conflicts |
+| `python3 anki_stage.py ids` | staged note ids, comma-separated — excluded from the queue |
+| `python3 anki_stage.py has-front WORD` | exit 0 if a staged new note already has that front |
+| `python3 anki_stage.py apply [--dry-run]` | pushes everything staged into Anki |
+
+Because staged rebuilds haven't reached Anki, their old `Regeln::` tag is still
+there — so the queue is **self-consuming only together with the staging
+area**: every backlog query excludes staged ids (step 2).
+
+`apply` refuses to overwrite a note that was edited in Anki after it was staged
+(its `mod` no longer matches `base_mod`); that change moves to
+`staged/conflicts/`, and the note simply comes back through the queue for a
+fresh rebuild.
+
 ## Argument: how many notes this run
 
 `/flashcard-maintenance [N]` — `N` is the total number of notes to migrate
-this run. **Default `N = 5`** when no argument is given.
+(stage) this run. **Default `N = 5`** when no argument is given.
+
+`/flashcard-maintenance apply` — no migration. Run
+`python3 anki_stage.py apply --dry-run`, then `python3 anki_stage.py apply`,
+and relay its output (✅ applied, ⚠ conflicts, ⏭ duplicates, ✗ errors, and any
+`⚠ Front geändert` lines). Only ever on the user's explicit request — this is
+the one step that writes to Anki, so it must not happen while they study.
+Anki has to be open.
+
+`/flashcard-maintenance status` — run `python3 anki_stage.py status` plus the
+backlog count, report, stop.
 
 - **`N ≤ 5`** → a single batch of `N`, one subagent, then stop.
 - **`N > 5`** → split into batches of **5** (the last batch takes the
@@ -41,6 +79,12 @@ hardcode it here — it moves.
 is *not* version order: an old note may have been rebuilt recently, so an
 ID-sorted batch comes out mixed. Always drain the lowest-versioned bucket
 before moving to the next.
+
+**Exclude everything already staged.** Run `python3 anki_stage.py ids` once
+per batch and, if it prints anything, append `-nid:<that list>` to every query
+below (e.g. `deck:"Einfach Besser! 500 B2" -nid:123,456 Back:*v1.0.0*`). A
+staged note still carries its old stamp in Anki; without the exclusion it gets
+rebuilt twice. Counts reported to the user are likewise *after* exclusion.
 
 Take the first bucket below that still returns results, and pull up to **5**
 from it (or fewer, if the remaining count toward `N` this run is smaller):
@@ -137,25 +181,41 @@ orchestrating session must **never rebuild cards inline**; it queries,
 classifies, dispatches, and relays short summaries. That is what lets a loop
 session run for hours without bloating.
 
-Hand the subagent: the note IDs, each one's front + current stamp + verdict
-(rebuild / patch-to-`VCUR` / re-tag only), and `VCUR`. Brief it to:
+Hand the subagent: the note IDs, each one's front + current stamp + `mod` +
+verdict (rebuild / patch-to-`VCUR` / re-tag only), and `VCUR`. Brief it to:
 
 - Read `/Users/parham/Desktop/Berlitz/Flashcard/CLAUDE.md` in full first — it
   is the authority on card content, depth and format.
+- **Never call `update_note_fields`, `add_note` or `tag_management`.** Anki
+  is read-only for this run; every change is staged as files (below). Where
+  CLAUDE.md says to write a note or set tags, stage it instead.
 - Pull each note with `notes_info`, rebuild or patch the `Back` field per
-  CLAUDE.md, and write it with `update_note_fields`.
+  CLAUDE.md, and stage it: first write the full Back HTML to
+  `staged/pending/<note_id>.back.html`, **then** `staged/pending/<note_id>.json`
+  (the `.json` is written last — it marks the change as complete):
+  `{"op": "update", "note_id": <id>, "base_mod": <mod from notes_info>,
+  "front": "<front>", "tags": [...], "summary": "<front> — <English gloss>"}`.
+  `base_mod` must be copied exactly from the same `notes_info` read the rebuild
+  was based on.
 - Decide **Vollkarte vs. Kurzkarte from the badge** before writing (Rule 19c).
   A Kurzkarte is the right size, not a worse card — never pad one out.
-- Stamp `VCUR` and set tags with `tag_management` — `Regeln::`, `Häufigkeit::`,
-  `Register::`, plus `Karte::IT` / `Karte::Grammatik` where they apply. Use
-  `replace_tags` to clear a stale `Regeln::v1.x`, `add_tags` otherwise. A note
-  left with its old `Regeln::` tag silently re-enters the queue next cycle.
+- Stamp `VCUR` and list the note's tags in the `.json` `tags` array —
+  `Regeln::vVCUR`, `Häufigkeit::`, `Register::`, plus `Karte::IT` /
+  `Karte::Grammatik` where they apply. List **only these managed tags**: on
+  apply, stale `Regeln::`/`Häufigkeit::`/`Register::`/`Karte::` tags are
+  removed and any other tag on the note is left alone. `apply` rejects a change
+  whose `Regeln::` tag doesn't match its stamp.
 - **Keep the front unless it is actually wrong** under CLAUDE.md's front rules.
-  If it changes, report it as `⚠ Front geändert: alt → neu` (Rule 15a).
-- Create companion and bonus cards triggered by Rules 13a (Group 3 reflexive),
-  18a (spoken equivalent) and 20 (cognates) — **`find_notes` for a duplicate
-  first**, then `add_note` into the same deck with note type `Einfach Besser!`
-  and full `VCUR` tags.
+  The `.json` `front` is always the intended front (unchanged or new). If it
+  changes, report it as `⚠ Front geändert: alt → neu` (Rule 15a).
+- Stage companion and bonus cards triggered by Rules 13a (Group 3 reflexive),
+  18a (spoken equivalent) and 20 (cognates). **Duplicate check in both places
+  first** — `find_notes` in Anki *and* `python3 anki_stage.py has-front <word>`
+  for one already staged — then write `staged/pending/add-<slug>.back.html`
+  followed by `staged/pending/add-<slug>.json`:
+  `{"op": "add", "front": "<front>", "tags": [...], "summary": "..."}`
+  (`<slug>` = the front, lowercased, spaces → `-`, umlauts kept). `apply`
+  re-checks for duplicates before adding.
 - Return a compact summary only: numbered front + English gloss, any changed
   front on its own line, and new companion/bonus cards listed separately.
   No HTML, no per-card commentary.
@@ -166,27 +226,31 @@ Post the subagent's summary plus the remaining count toward `N`. Then start
 the next batch immediately — no approval step between batches, as long as
 notes migrated so far is still below `N` and the backlog isn't empty.
 
-**Stop once `N` notes are migrated — or the backlog hits 0, whichever comes
-first — and hand Anki back.** That is one run, not a target to push past.
-Report the total done (out of `N` requested) and the remaining backlog, and
-wait for the user to ask for another run (with a new `N`, or the default 5).
+**Stop once `N` notes are staged — or the backlog hits 0, whichever comes
+first.** That is one run, not a target to push past. Report the total staged
+(out of `N` requested), the remaining backlog, and the `anki_stage.py status`
+line, and remind the user that nothing reaches Anki until they run
+`/flashcard-maintenance apply` (or `python3 anki_stage.py apply`). Then wait for
+the user to ask for another run (with a new `N`, or the default 5).
 Do not offer to keep going in a way that reads as waiting for permission to
 continue; the run is simply over.
 
 ## Never start unprompted
 
-**Writing to Anki blocks the user from studying.** A batch in flight means they
-cannot review cards. So:
+Staging keeps writes away from study time, but a run still reads the live
+collection and **`apply` writes to it** — the user decides when either happens.
+So:
 
-- **Only begin when the user explicitly asks.** Not on a hunch that the backlog
+- **Only begin — or apply — when the user explicitly asks.** Not on a hunch that the backlog
   is large, not because a previous session left it unfinished, not as a
   follow-on to unrelated flashcard work. A stale backlog is never a reason to
   start on your own.
 - **Stop when they say stop**, and stop *promptly* — finish the batch in flight
-  if it is nearly done, otherwise abandon it. A half-migrated batch costs
-  nothing: the untouched notes keep their old tag and come back next cycle.
-- Between batches is the natural place to hand Anki back. If the user says
-  anything mid-run, treat it as stop-and-yield rather than finishing the queue.
+  if it is nearly done, otherwise abandon it. A half-staged batch costs
+  nothing: a note without a `.json` isn't staged and comes back next cycle.
+  (Delete a stray `.back.html` with no `.json` beside it if you abandon one.)
+- Never run `apply` as a follow-on to a migration run, and never suggest it
+  would be a good moment — the user may be studying.
 
 ## Rules of engagement
 
@@ -195,9 +259,11 @@ cannot review cards. So:
   pass the tag query while still being wrong, and the tag is then a lie.
 - **Never retro-tag without rebuilding**, for the same reason.
 - Don't touch scheduling. Tags sit on the note and are scheduling-neutral;
-  `update_note_fields` and `tag_management` are the only write calls used.
-- If the user is reviewing in Anki, `update_note_fields` fails on a note open
-  in the browser. Surface the failure, don't silently skip it.
+  `anki_stage.py apply` only uses `update_note_fields`, `tag_management` and
+  `add_note`. The migration run itself uses no write calls at all.
+- `update_note_fields` fails on a note open in the Anki browser. `apply`
+  leaves such a change in `pending/` and prints ✗ — relay it, don't hide it;
+  the next `apply` retries.
 - **A run is capped at the requested `N` notes (batches of 5), then it ends
   on its own.** It also ends early if the user stops it or the backlog hits
   0. Never run open-endedly — see "Never start unprompted" for when starting
