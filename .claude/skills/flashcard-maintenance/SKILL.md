@@ -82,39 +82,46 @@ before moving to the next.
 
 **Exclude everything already staged.** Run `python3 anki_stage.py ids` once
 per batch and, if it prints anything, append `-nid:<that list>` to every query
-below (e.g. `deck:"Einfach Besser! 500 B2" -nid:123,456 Back:*v1.0.0*`). A
+below (e.g. `deck:"Einfach Besser! 500 B2" -nid:123,456 "Back:*<span class=\"ver\">v1.0.0</span>*"`). A
 staged note still carries its old stamp in Anki; without the exclusion it gets
 rebuilt twice. Counts reported to the user are likewise *after* exclusion.
 
-Take the first bucket below that still returns results, and pull up to **5**
-from it (or fewer, if the remaining count toward `N` this run is smaller):
+**The backlog is every note not stamped `VCUR`** — whatever its stamp, it is
+older than current. Work it oldest first, as buckets.
 
-| Order | Query (after `deck:"Einfach Besser! 500 B2"`) |
-|---|---|
-| 1 | `-Back:*class=\"ver\"*` — unstamped, pre-1.0 legacy |
-| 2 | `Back:*v1.0.0*` |
-| 3 | `Back:*v1.2.0*` |
-| 4 | `Back:*v1.3.0*` |
-| 5 | `Back:*v1.4.0*` |
-| 6 | `Back:*v1.4.1*` |
-| 7 | `Back:*v1.5.0*` |
-| 8 | `Back:*v1.6.1*` |
-| 9 | `Back:*v1.6.2*` |
-| 10 | `Back:*v1.7.0*` |
-| 11 | `Back:*v2.0.0*` |
+**Build the buckets each run; never hardcode them.** List every version in
+`changelog.md` (the `- **X.Y.Z**` entries) that is lower than `VCUR`, sort
+ascending, and query in this order (each after `deck:"Einfach Besser! 500 B2"`
+and the staged-id exclusion):
 
-The stamp lives in the `Back` field, so these are field-content searches;
-the escaped quotes in the legacy query are required. **Derive the ladder from
-the changelog rather than trusting this list** — add a row whenever a version
-ships, and drop the bottom row once it equals `VCUR`. `v1.1.0` and `v1.6.0` are
-absent because no card in the deck carries them.
+| Order | Query | Bucket |
+|---|---|---|
+| 1 | `-Back:*class=\"ver\"*` | unstamped, pre-1.0 legacy |
+| 2 … | `"Back:*<span class=\"ver\">vX.Y.Z</span>*"` | one per changelog version below `VCUR`, oldest first |
+| last | `-"Back:*<span class=\"ver\">vVCUR</span>*"` | **catch-all:** anything still not at `VCUR` |
+
+Take the first bucket that returns results and pull up to **5** from it (or
+fewer, if the remaining count toward `N` this run is smaller). A version with
+no cards in the deck simply returns 0 and is skipped — no need to prune the
+list by hand.
+
+The catch-all is only reached once every known bucket is empty. If it returns
+anything, those notes carry a stamp the changelog doesn't know (a typo, a
+malformed span): read their stamps with `notes_info`, process the lowest first,
+and mention the odd stamp in the summary. Its count is also the **total
+remaining backlog** — run it once per cycle for the number reported to the
+user.
+
+The stamp lives in the `Back` field, so these are field-content searches; the
+escaped quotes are required. Matching on the full `<span class="ver">…</span>`
+keeps `v1.0.0` from matching a stray version string elsewhere on the card.
 
 Legacy first is deliberate: those cards have no badge, no `mn` box, dead `tl`
 classes and free-standing examples, so they are both the worst cards in the
 deck and the ones a rebuild improves most.
 
 Report the remaining total each cycle so the user sees it shrink, and say which
-bucket the batch came from. When every bucket is empty the backlog is clear:
+bucket the batch came from. When the catch-all returns 0 the backlog is clear:
 say so and stop.
 
 **Distribution snapshot, 2026-08-11** — re-query live, this moves:
@@ -131,14 +138,14 @@ say so and stop.
 Deck total 2348. Stamp and `Regeln::` tag were verified to agree in both
 directions on every v2.0.0 note, so either can be trusted for that bucket.
 
-> **TODO — retire the `Back` ladder once every note is tagged.**
-> The ladder above exists only because tags started at v1.7.0, so the untagged
+> **TODO — retire the `Back` searches once every note is tagged.**
+> The buckets above exist only because tags started at v1.7.0, so the untagged
 > notes (1733 of 2348 as of 2026-08-11) cannot be ordered any other way — a
 > legacy card and a v1.6.2 card are both simply "no tag". Every note this skill
 > touches gets a `Regeln::` tag, so that number only goes down.
 >
-> **When `deck:"Einfach Besser! 500 B2" -tag:Regeln::*` returns 0, delete the
-> ladder and this note.** Finding the oldest is then one tag query sorted by
+> **When `deck:"Einfach Besser! 500 B2" -tag:Regeln::*` returns 0, replace the
+> buckets with tag queries and delete this note.** Finding the oldest is then one tag query sorted by
 > its `Regeln::` subtag, and no `Back` field search is ever needed again:
 >
 > ```
