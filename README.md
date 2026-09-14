@@ -35,12 +35,14 @@ the `Q` shortcut:
   meaning, in whatever register the word actually lives in.
 - **Grammar box** — gender/plural for nouns, conjugation quirks and the
   Perfekt auxiliary for verbs, valency patterns with case governance, each
-  with its own example. The reference tail (fixed expressions, near-synonym
-  collocations, synonyms/antonyms) folds behind a toggle at render time —
-  useful for building depth, but never part of what a review grade is
+  with its own example. Only the first line (gender/plural or conjugation)
+  stays visible; everything after it — valency patterns, fixed expressions,
+  collocations, synonyms/antonyms — folds behind a toggle at render time,
+  useful for building depth but never part of what a review grade is
   judged on. It exists because a grade (Again/Hard/Good/Easy) needs one
-  clear target: did I know the meaning and produce it correctly? Everything
-  above the fold is that test; everything inside it is extra.
+  clear target: did I know the meaning, the article/plural, or the
+  conjugation? Everything above the fold is that test; everything inside it
+  is extra.
 
 Depth follows the two things I actually need: **spoken German and IT/software
 vocabulary get the full card above.** Everything else that still earned a
