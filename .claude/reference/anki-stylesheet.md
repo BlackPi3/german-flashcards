@@ -36,11 +36,15 @@ since it's a CSS-only selector on an existing pattern.
 
 ## Current stylesheet
 
-Verified identical to the live Anki note type on 2026-09-01. `.c br + br`
-tightens the gap between sections: 50% off the original, then a further 25%
-off that (0.8em → 0.6em), both per user request. The `.card` block at the top
-is Anki's own default wrapper, present in the note type but not previously
-mirrored in `CLAUDE.md`.
+Verified identical to the live Anki note type on 2026-09-08. Section gaps
+(`.c br + br`) cut another 50% this round (0.6em → 0.3em, on top of the
+0.8em → 0.6em from 2026-09-01) — smaller gaps deck-wide, per user request.
+`.fq` is now a real chip (background, radius, padding) instead of plain
+coloured text, and its rendered wording is abbreviated (`schriftl.` /
+`Amtsspr.` / `gespr.:`) so the badge is glanceable instead of a sentence to
+read — see CLAUDE.md's Häufigkeit/Register badge section. The `.card` block
+at the top is Anki's own default wrapper, present in the note type but not
+previously mirrored in `CLAUDE.md`.
 
 ```css
 .card {
@@ -52,10 +56,8 @@ mirrored in `CLAUDE.md`.
     background-color: white;
 }
 .c  { font-size:16px; line-height:1.6; text-align:left; }
-.c br + br { line-height:0.6em; }
+.c br + br { line-height:0.3em; }
 .tr { color:#888; font-size:smaller; }
-.fq { color:#8D6E63; font-size:smaller; letter-spacing:0.3px; }
-.mn { border-left:3px solid #FFA726; padding-left:10px; margin:4px 0; }
 .gr { border-left:3px solid #42A5F5; padding-left:10px; margin:4px 0; }
 .bl { color:#1565C0; }
 .vl { color:#9C27B0; }
@@ -70,9 +72,21 @@ mirrored in `CLAUDE.md`.
 .tl-ant { color:#C62828; }
 .ver { color:#bbb; font-size:10px; text-align:right; display:block; }
 
+.mn { border-left:3px solid #FFA726; padding-left:10px; margin:4px 0; }
+.fq {
+    display:inline-block;
+    background:#EFEBE9;
+    color:#6D4C41;
+    font-size:11px;
+    font-weight:bold;
+    letter-spacing:0.2px;
+    padding:2px 8px;
+    border-radius:10px;
+}
+
 /* Anki night mode — the dark tones above are unreadable on a dark background.
    Applies to legacy cards too, since the classes are the same. */
-.nightMode .fq  { color:#D7CCC8; }
+.nightMode .fq  { background:#4E342E; color:#D7CCC8; }
 .nightMode .tr  { color:#aaa; }
 .nightMode .bl  { color:#64B5F6; }
 .nightMode .vl  { color:#CE93D8; }
@@ -86,9 +100,9 @@ mirrored in `CLAUDE.md`.
 .nightMode .ver { color:#666; }
 
 details.fold {
-    margin-top:8px;
+    margin-top:4px;
     border-top:1px dashed #B0BEC5;
-    padding-top:4px;
+    padding-top:2px;
 }
 details.fold > summary {
     cursor:pointer;
@@ -100,19 +114,40 @@ details.fold > summary {
 details.fold > summary::-webkit-details-marker { display:none; }
 details.fold > summary::before { content:"▸ "; }
 details.fold[open] > summary::before { content:"▾ "; }
-details.fold[open] > summary { margin-bottom:6px; }
+details.fold[open] > summary { margin-bottom:3px; }
 
 .nightMode details.fold { border-top-color:#455A64; }
 .nightMode details.fold > summary { color:#90A4AE; }
 ```
 
-`details.fold` is the collapsed reference tail (Rule 25) — the card template wraps
-`tl-nom`/`tl-fw`/`tl-nvv`/`tl-kl`/`tl-rm`/`tl-syn`/`tl-ant` in it automatically at render
-time, so this class needs no per-note authoring. A dashed top border separates it from the
-always-visible `bl`/`vl` content above; the `▸`/`▾` marker swaps on `[open]` instead of a
-transform, since Anki's WebEngine renders `list-style:none` + `::before` more reliably than
-relying on `::marker` across versions. Colour is a neutral blue-grey, deliberately outside
-the `tl-*` palette so it doesn't compete with any of them once expanded.
+`details.fold` is the collapsed reference tail (Rule 25). As of 2026-09-08 the
+card template's fold script starts the fold at the first `vl` **or** `tl-*`
+node — whichever comes first in the `gr` box — instead of only `tl-*`. Since
+`vl` always precedes any `tl-*` class in the authored order, this means the
+fold now swallows every valency pattern and its `ex`/`tr` too, leaving only
+the `bl` line visible by default. This needs no per-note authoring, same as
+before.
+
+The script also **no longer pulls the `<br>` immediately before the fold
+start into the `<details>`.** It used to (so the first folded line wouldn't
+run into `summary` on one line), but `<summary>` already forces block-level
+flow, so that extra `<br>` was rendering as a full blank line between the
+summary and the first folded line every time the fold was opened — the "huge
+gap" the fold used to have right after opening. Dropping it left the
+preceding `<br>` in the *visible* part of `gr` instead (harmless — it's what
+puts the dashed fold border on its own line under `bl`).
+
+A dashed top border separates the fold from the always-visible `bl` content
+above; the `▸`/`▾` marker swaps on `[open]` instead of a transform, since
+Anki's WebEngine renders `list-style:none` + `::before` more reliably than
+relying on `::marker` across versions. Colour is a neutral blue-grey,
+deliberately outside the `tl-*` palette so it doesn't compete with any of
+them once expanded. The card template's `Q` keyboard shortcut and its
+`<script>` for building the fold are unchanged in mechanism — see
+`model_templates(model_name="Einfach Besser!")` — only `TAIL_CLASSES` (now
+including `'vl'`), the dropped back-shift, and the summary text (now generic:
+"Mehr anzeigen (Taste: Q)", since the fold no longer covers only Wendungen/
+Synonyme/Antonyme) changed.
 
 ## Proposed but not adopted
 
