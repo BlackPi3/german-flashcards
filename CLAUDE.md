@@ -34,7 +34,7 @@ Two things deserve full effort: German I will actually **speak**, and German I n
 
 **IT beats both axes — register *and* Häufigkeit.** `Schnittstelle`, `bereitstellen`, `Abfrage`, `Zugriff`, `einrichten` are written-register or technical and still get the full treatment. A rare IT word gets a Vollkarte too: if it's `niedrig` in German at large but load-bearing in my work, that is exactly the word I need to be able to produce. That is the vocabulary I work in.
 
-**A Kurzkarte contains**, and nothing else: the badge including the mandatory spoken equivalent (Rule 18a) · a `mn` box holding **one** meaning — German definition, two English lines, **one** example · a minimal Grammatik box (noun → article + Plural; verb → regular/irregular + Perfekt auxiliary + main valency; adjective/adverb → Wortart + valency), with **no** inline examples · the version stamp.
+**A Kurzkarte contains**, and nothing else: the badge including the mandatory spoken equivalent (Rule 18a) · a `mn` box holding **one** meaning — German definition, two English lines, **one** example · a minimal `bl` line (noun → article + Plural; verb → regular/irregular + Perfekt auxiliary; adjective/adverb → Wortart) plus the mandatory `vl` (Rule 7), which folds behind the reference tail exactly like on a Vollkarte (Rule 25) · **no** inline examples anywhere in the Grammatik box · the version stamp.
 
 **It leaves out** further meanings, Nominalisierung, Feste Wendungen, NVV, Kollokationen, Redemittel, Synonym/Antonym, and the per-pattern inline examples. Rules 4a and 17 are relaxed here — one meaning, one example, one pattern, nothing left uncovered.
 
@@ -44,14 +44,14 @@ A Kurzkarte is the **right size** for a word I only need to recognise, not a wor
 
 ---
 
-## Rules Version: **2.1.1**
+## Rules Version: **3.0.0**
 
 Every card is stamped with the rules version it was created under, so we always know whether a card is stale.
 
 ### Stamp
 Last element inside `<div class="c">`, immediately before the closing `</div>`:
 ```html
-<br><br><span class="ver">v2.1.1</span>
+<br><br><span class="ver">v3.0.0</span>
 ```
 - **No stamp = legacy card** (pre-1.0). Assume it is stale and needs a full rebuild when touched.
 - Always stamp with the version **current at creation time**, never backdate.
@@ -143,7 +143,7 @@ A card is **three blocks**: the badge, what the word means, how the word works. 
 ```html
 <div class="c">
 
-<span class="fq">Häufigkeit: [hoch/mittel/niedrig] · Register: [gesprochen/neutral/eher schriftlich/Amtssprache][ · gesprochen sagt man eher: …]</span>
+<span class="fq">Häufigkeit: [hoch/mittel/niedrig] · Register: [gesprochen/neutral/schriftl./Amtsspr.][ · gespr.: …]</span>
 
 <br><br>
 
@@ -163,7 +163,7 @@ A card is **three blocks**: the badge, what the word means, how the word works. 
 [grammar content by word type — see below; every line starts with <br>, each pattern with its own example]
 </div>
 
-<br><br><span class="ver">v2.1.1</span>
+<br><br><span class="ver">v3.0.0</span>
 
 </div>
 ```
@@ -212,14 +212,16 @@ First element inside `<div class="c">`, before the definition. Two independent a
 | `Amtssprache` | Bureaucratic/legal — forms, contracts, official letters. |
 
 Third element after the two axes:
-- **`· gesprochen sagt man eher: [word]` — mandatory on every card whose Register is not `gesprochen`.** See below.
+- **`· gespr.: [word]` — mandatory on every card whose Register is not `gesprochen`.** See below.
 - a usage warning where it helps: `· umgangssprachlich`, `· veraltet`, `· regional (süddt./österr.)`, `· nur in festen Wendungen`
+
+On the card, `Register` is written in its short form — `schriftl.` for *eher schriftlich*, `Amtsspr.` for *Amtssprache* — to keep the badge glanceable. The `Register::` tag and this section's headings still use the full words; only the rendered `fq` text is abbreviated.
 
 ```html
 <span class="fq">Häufigkeit: hoch · Register: gesprochen</span>
-<span class="fq">Häufigkeit: hoch · Register: eher schriftlich · gesprochen sagt man eher: bekommen</span>
-<span class="fq">Häufigkeit: mittel · Register: neutral · gesprochen sagt man eher: sich kümmern um</span>
-<span class="fq">Häufigkeit: niedrig · Register: Amtssprache · gesprochen sagt man eher: Bescheid sagen</span>
+<span class="fq">Häufigkeit: hoch · Register: schriftl. · gespr.: bekommen</span>
+<span class="fq">Häufigkeit: mittel · Register: neutral · gespr.: sich kümmern um</span>
+<span class="fq">Häufigkeit: niedrig · Register: Amtsspr. · gespr.: Bescheid sagen</span>
 ```
 
 The opening badge describes the **leading meaning** — the one listed first.
@@ -229,7 +231,7 @@ The opening badge describes the **leading meaning** — the one listed first.
 **Per-meaning badge (when meanings differ).** If a card lists more than one meaning and their Häufigkeit or Register are not the same, give **every** listed meaning its own `fq` line inside the `mn` box, **at the top of that meaning**, on the numbered line and above the German definition:
 
 ```html
-<br><b>1.</b> <span class="fq">Häufigkeit: mittel · Register: eher schriftlich · gesprochen sagt man eher: machen</span>
+<br><b>1.</b> <span class="fq">Häufigkeit: mittel · Register: schriftl. · gespr.: machen</span>
 <br>Durch eigene Leistung bekommen.
 <br><span class="tr">To get something through your own effort.</span>
 <br><span class="tr">To acquire; to gain.</span>
@@ -243,11 +245,11 @@ Badge all meanings or none — a card where only one meaning carries a badge rea
 
 **Any card whose Register is `neutral`, `eher schriftlich` or `Amtssprache` must name what I would actually say instead.** `neutral` counts too: a neutral word is one I *can* say, but there is almost always a more everyday way to put it, and that everyday way is the thing I'm missing when I try to speak.
 
-- Put it in the badge: `· gesprochen sagt man eher: [word or short phrase]`.
+- Put it in the badge: `· gespr.: [word or short phrase]`.
 - **Per meaning**, on per-meaning badges — they differ (`vorkommen` = *to happen* → `passieren`; `vorkommen` = *to be found* → `es gibt`).
 - It may be a **phrase or a whole construction** — `es gibt`, `sich melden bei`, `viel verlangen von`. Often no single word exists and the natural spoken version is a different sentence shape; say that rather than forcing a one-word gloss.
-- If the headword genuinely *is* what people say, write `· gesprochen: genauso`. Blank must always mean "not checked yet".
-- Never invent slang, never name a regional or dated word. Mark colloquial options: `· gesprochen sagt man eher: kriegen (ugs.)`.
+- If the headword genuinely *is* what people say, write `· gespr.: genauso`. Blank must always mean "not checked yet".
+- Never invent slang, never name a regional or dated word. Mark colloquial options: `· gespr.: kriegen (ugs.)`.
 - It belongs in the badge even when the same word appears as a `tl-syn` — the badge is what I read first.
 - **The named equivalent gets its own card, automatically** — duplicate check, then create it in the same session without asking, and note it in the summary (same mechanism as Rule 20). A badge pointing at a word I can't produce has moved the problem, not solved it.
   - Applies to vocabulary items (`passieren`, `kaufen`, `günstig`, `benutzen`).
@@ -358,7 +360,7 @@ Input:
 
 Front: `scheitern`
 
-Tags: `Regeln::v2.1.1 Häufigkeit::mittel Register::gesprochen`
+Tags: `Regeln::v3.0.0 Häufigkeit::mittel Register::gesprochen`
 
 Note the filter at work: `an etwas scheitern` is **not** a Kollokation here because it's already the valency pattern; `misslingen`/`fehlschlagen` are true synonyms but more written, so the spoken `schiefgehen` leads and they're marked; the everyday `klappen` leads the antonyms. Three examples, each proving one thing: the meaning, the `an + Dat` pattern, the Wendung. None of them floats at the bottom.
 
@@ -399,7 +401,7 @@ Back:
 <br><span class="tl-ant">Antonym: klappen, gelingen</span>
 </div>
 
-<br><br><span class="ver">v2.1.1</span>
+<br><br><span class="ver">v3.0.0</span>
 
 </div>
 ```
@@ -412,16 +414,16 @@ Applied directly on the note — via the `tags` list on `add_note` for a new car
 
 | Tag | Values | On which cards |
 |---|---|---|
-| `Regeln::vX.Y.Z` | e.g. `Regeln::v2.1.1` | every card — always identical to the `ver` stamp |
+| `Regeln::vX.Y.Z` | e.g. `Regeln::v3.0.0` | every card — always identical to the `ver` stamp |
 | `Häufigkeit::…` | `hoch` · `mittel` · `niedrig` | every word card |
 | `Register::…` | `gesprochen` · `neutral` · `eher_schriftlich` · `Amtssprache` | every word card |
 | `Karte::Grammatik` | — | ⚙ Grammatikkarten only |
 | `Karte::IT` | — | IT / tech vocabulary only |
 
 ```
-add_note(..., tags=["Regeln::v2.1.1", "Häufigkeit::hoch", "Register::neutral"])
-add_note(..., tags=["Regeln::v2.1.1", "Häufigkeit::mittel", "Register::eher_schriftlich", "Karte::IT"])
-add_note(..., tags=["Regeln::v2.1.1", "Karte::Grammatik"])   # ⚙ card
+add_note(..., tags=["Regeln::v3.0.0", "Häufigkeit::hoch", "Register::neutral"])
+add_note(..., tags=["Regeln::v3.0.0", "Häufigkeit::mittel", "Register::eher_schriftlich", "Karte::IT"])
+add_note(..., tags=["Regeln::v3.0.0", "Karte::Grammatik"])   # ⚙ card
 ```
 
 - **The two `Karte::` tags are flags, not an enum.** Absence means "ordinary word card" — there is no `Karte::Wort`. Both mark something that *changes how the card is built*: a ⚙ card has no badge and no vocabulary content, and IT overrides register to force a Vollkarte. **Nothing else goes under `Karte::`** — topic tags (`Arbeit`, `Einkauf`) go stale and turn it into a junk drawer.
@@ -471,7 +473,7 @@ Numbering is stable — never renumber; add sub-numbers instead.
 16a. **Every example is a sentence someone would actually say** — the default habitat is conversation, and examples are where the spoken priority is enforced. The exception is a headword that isn't spoken: for `eher schriftlich` or `Amtssprache` the example belongs in the register the word really lives in — an email, a form, a news line — because a colloquial sentence around a bureaucratic word teaches the wrong home for it. Even then it stays a natural, complete sentence, never a grammar specimen.
 17. **Example for every variant:** every distinct valency pattern, every **NVV** and every **Feste Wendung** in the Grammatik box gets its own example inline directly beneath it (`vl` / `tl-nvv` / `tl-fw` → `ex` → `tr`). Kollokationen, Redemittel, Synonyme and Antonyme get their gloss and nothing else. A bare label (`intransitiv`, `transitiv`) is not a pattern — a pattern is a concrete frame like `scheitern an + Dat` or `jdn. um etw. bitten`. Every example on the card is a different sentence showing a different situation; if two would come out alike, the pattern didn't need its own. Relaxed on a Kurzkarte: the meaning's example is the only one, and the Grammatik box carries none.
 18. **Häufigkeit / Register badge:** every **word** card opens with one; it describes the leading meaning. If meanings differ in Häufigkeit or Register, every meaning gets its own `fq` line — all or none. A ⚙ Grammatikkarte has no badge at all — it opens with `⚙ Grammatikkarte` instead (Rule 22).
-18a. **Spoken equivalent is mandatory:** every badge whose Register is not `gesprochen` — `neutral` included — names what I'd actually say via `· gesprochen sagt man eher: …`, or `· gesprochen: genauso` when the headword already is it. Blank always means "not checked yet". The named equivalent gets its own card automatically (duplicate check first); constructions I already command are exempt.
+18a. **Spoken equivalent is mandatory:** every badge whose Register is not `gesprochen` — `neutral` included — names what I'd actually say via `· gespr.: …`, or `· gespr.: genauso` when the headword already is it. Blank always means "not checked yet". The named equivalent gets its own card automatically (duplicate check first); constructions I already command are exempt.
 19. **The common-vs.-rare filter covers the whole card**, Grammatik box included. Those sections are opt-in; leaving one out is correct. Never pad. **When in doubt, leave it out.**
 19a. **Formal ≠ rare:** cut what is dated, literary, niche or regional — not what is written. Label the register, lead with the spoken option, keep examples speakable.
 19b. **No level gating:** never include or exclude by CEFR level.
@@ -481,4 +483,4 @@ Numbering is stable — never renumber; add sub-numbers instead.
 22. **Grammatikkarten (⚙):** contrast and rule cards use the `⚙` front prefix and the `⚙ Grammatikkarte` label in place of the badge. Use them for choices the user actually gets wrong; they complement word cards, never replace them.
 23. **Tags:** every note carries `Regeln::vX.Y.Z` (identical to the stamp), `Häufigkeit::`, `Register::`, plus the flags `Karte::Grammatik` and `Karte::IT` where they apply — set via `add_note`'s `tags` list or `tag_management`. Values mirror the badge wording. New cards and rebuilds only; never retro-tag. See Tags.
 24. **Three blocks:** badge → `mn` box (Bedeutung / Bedeutungen) → `gr` box (Grammatik) → stamp, and nothing outside them. **One `mn` box per card** however many meanings it holds — numbered inside, never a second box. A ⚙ Grammatikkarte has no `mn` box at all. The stylesheet lives in the Anki note type, never inline in the `Back` field.
-25. **The reference tail folds automatically — it is never the grading target.** The card template collapses `tl-nom`, `tl-fw`, `tl-nvv`, `tl-kl`, `tl-rm`, `tl-syn` and `tl-ant` behind a `<details>` at render time on every card, old and new — nothing to author, no per-card markup. This sets what Again/Hard/Good/Easy is actually judged on: badge, `mn` box, and the `bl`/`vl` lines with their examples are the whole test — did I know the meaning and produce it correctly? The folded tail is depth material for building expertise, opened by choice, never something the grade depends on. This constrains where content goes: anything actually needed to use the word correctly — gender, plural, valency, auxiliary — belongs in `bl`/`vl`, never in a `tl-*` class, because `tl-*` is reference-only and gets folded away by design.
+25. **The reference tail folds automatically — it is never the grading target.** The card template collapses everything in the `gr` box *after* `bl` — `vl` and its `ex`/`tr`, plus `tl-nom`, `tl-fw`, `tl-nvv`, `tl-kl`, `tl-rm`, `tl-syn` and `tl-ant` — behind a `<details>` at render time on every card, old and new — nothing to author, no per-card markup. This sets what Again/Hard/Good/Easy is actually judged on: badge, `mn` box, and the `bl` line are the whole test — did I know the meaning, the article/plural, or the conjugation? Valency patterns and everything below them are depth material for building expertise, opened by choice, never something the grade depends on. This constrains where content goes: the bare grammatical facts that make a word usable — gender, plural, regular/irregular, notable conjugation forms, Perfekt auxiliary — belong in `bl`; everything that shows *how* the word is used, including `vl`, is reference-only and gets folded away by design.
