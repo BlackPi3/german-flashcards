@@ -484,3 +484,22 @@ Numbering is stable — never renumber; add sub-numbers instead.
 23. **Tags:** every note carries `Regeln::vX.Y.Z` (identical to the stamp), `Häufigkeit::`, `Register::`, plus the flags `Karte::Grammatik` and `Karte::IT` where they apply — set via `add_note`'s `tags` list or `tag_management`. Values mirror the badge wording. New cards and rebuilds only; never retro-tag. See Tags.
 24. **Three blocks:** badge → `mn` box (Bedeutung / Bedeutungen) → `gr` box (Grammatik) → stamp, and nothing outside them. **One `mn` box per card** however many meanings it holds — numbered inside, never a second box. A ⚙ Grammatikkarte has no `mn` box at all. The stylesheet lives in the Anki note type, never inline in the `Back` field.
 25. **The reference tail folds automatically — it is never the grading target.** The card template collapses everything in the `gr` box *after* `bl` — `vl` and its `ex`/`tr`, plus `tl-nom`, `tl-fw`, `tl-nvv`, `tl-kl`, `tl-rm`, `tl-syn` and `tl-ant` — behind a `<details>` at render time on every card, old and new — nothing to author, no per-card markup. This sets what Again/Hard/Good/Easy is actually judged on: badge, `mn` box, and the `bl` line are the whole test — did I know the meaning, the article/plural, or the conjugation? Valency patterns and everything below them are depth material for building expertise, opened by choice, never something the grade depends on. This constrains where content goes: the bare grammatical facts that make a word usable — gender, plural, regular/irregular, notable conjugation forms, Perfekt auxiliary — belong in `bl`; everything that shows *how* the word is used, including `vl`, is reference-only and gets folded away by design.
+
+## Skill routing
+
+When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
+
+Key routing rules:
+- Product ideas/brainstorming → invoke /office-hours
+- Strategy/scope → invoke /plan-ceo-review
+- Architecture → invoke /plan-eng-review
+- Design system/plan review → invoke /design-consultation or /plan-design-review
+- Full review pipeline → invoke /autoplan
+- Bugs/errors → invoke /investigate
+- QA/testing site behavior → invoke /qa or /qa-only
+- Code review/diff check → invoke /review
+- Visual polish → invoke /design-review
+- Ship/deploy/PR → invoke /ship or /land-and-deploy
+- Save progress → invoke /context-save
+- Resume context → invoke /context-restore
+- Author a backlog-ready spec/issue → invoke /spec
