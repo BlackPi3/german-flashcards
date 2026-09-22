@@ -1,6 +1,6 @@
 ---
 name: flashcard-maintenance
-description: Migrate stale notes in the Anki deck "Einfach Besser! 500 B2" up to CLAUDE.md's current Rules Version. Rebuilds are staged as local files under staged/ instead of being written to Anki, so the user can keep studying; `apply` pushes them into Anki on command. Takes the number of notes to process this run as an argument (default 5), or `apply` / `status`; counts above 5 are split into batches of 5, one subagent per batch. Use when the user asks to continue backlog maintenance, rework stale cards, bring the deck up to the current rules version, or apply/submit staged maintenance changes.
+description: Migrate stale notes in the Anki deck "Einfach Besser! 500 B2" up to CLAUDE.md's current Rules Version. Rebuilds are staged as local files under staged/ instead of being written to Anki, so the user can keep studying; `apply` pushes them into Anki on command. Takes the number of notes to process this run as an argument (default 10), or `apply` / `status`; counts above 10 are split into batches of 10, one subagent per batch. Use when the user asks to continue backlog maintenance, rework stale cards, bring the deck up to the current rules version, or apply/submit staged maintenance changes.
 ---
 
 # Flashcard backlog maintenance
@@ -44,7 +44,7 @@ fresh rebuild.
 ## Argument: how many notes this run
 
 `/flashcard-maintenance [N]` — `N` is the total number of notes to migrate
-(stage) this run. **Default `N = 5`** when no argument is given.
+(stage) this run. **Default `N = 10`** when no argument is given.
 
 `/flashcard-maintenance apply` — no migration. Run
 `python3 anki_stage.py apply --dry-run`, then `python3 anki_stage.py apply`,
@@ -56,12 +56,19 @@ Anki has to be open.
 `/flashcard-maintenance status` — run `python3 anki_stage.py status` plus the
 backlog count, report, stop.
 
-- **`N ≤ 5`** → a single batch of `N`, one subagent, then stop.
-- **`N > 5`** → split into batches of **5** (the last batch takes the
-  remainder, e.g. `N = 12` → 5, 5, 2). One subagent per batch, back to back,
+- **`N ≤ 10`** → a single batch of `N`, one subagent, then stop.
+- **`N > 10`** → split into batches of **10** (the last batch takes the
+  remainder, e.g. `N = 25` → 10, 10, 5). One subagent per batch, back to back,
   no approval step between batches (see "Relay and continue" below) — but the
   run still ends the moment `N` notes have been migrated or the backlog hits
   0, whichever comes first.
+
+**Never run two subagents at once.** Dispatch one, wait for it to finish,
+relay its summary, then dispatch the next. Parallel batches are forbidden even
+though they would finish sooner: they triple the ~36k-token startup context
+paid per agent, and they drain the rate limit three times as fast. Speed is not
+a goal here — the job runs unattended overnight, and spending the limit slowly
+is the point. One batch at a time, always.
 
 `N` replaces the old fixed 50-note/5-batch cap — the cap *is* whatever the
 user asked for this run.
@@ -100,7 +107,7 @@ and the staged-id exclusion):
 | 2 … | `"Back:*<span class=\"ver\">vX.Y.Z</span>*"` | one per changelog version below `VCUR`, oldest first |
 | last | `-"Back:*<span class=\"ver\">vVCUR</span>*"` | **catch-all:** anything still not at `VCUR` |
 
-Take the first bucket that returns results and pull up to **5** from it (or
+Take the first bucket that returns results and pull up to **10** from it (or
 fewer, if the remaining count toward `N` this run is smaller). A version with
 no cards in the deck simply returns 0 and is skipped — no need to prune the
 list by hand.
@@ -183,16 +190,28 @@ table matters for the next MINOR bump.*
 
 ### 4. Dispatch one subagent for the batch
 
-One subagent per batch of up to 5 — this is the context-management lever. The
-orchestrating session must **never rebuild cards inline**; it queries,
+One subagent per batch of up to 10, **one at a time** — this is the
+context-management lever, and it is also the cost lever. An agent pays ~36k
+tokens of startup context (tool schemas, CLAUDE.md, the skill, its brief)
+before it sees a note, at the premium cache-write rate; spreading that over 10
+cards costs ~3.6k each, over 1 card it costs 36k. Measured on 2026-09-22: a
+worker that did 10 cards in 6 API calls spent 37k tokens per card; one that
+took 14 calls for 14 cards spent 72k. **Cost tracks API calls, not cards per
+batch** — so batch the file writes (ten `Write` calls in one response is
+normal and good) and keep round trips down.
+
+The orchestrating session must **never rebuild cards inline**; it queries,
 classifies, dispatches, and relays short summaries. That is what lets a loop
 session run for hours without bloating.
 
 Hand the subagent: the note IDs, each one's front + current stamp + `mod` +
 verdict (rebuild / patch-to-`VCUR` / re-tag only), and `VCUR`. Brief it to:
 
-- Read `/Users/parham/Desktop/Berlitz/Flashcard/CLAUDE.md` in full first — it
-  is the authority on card content, depth and format.
+- **Do not read CLAUDE.md with the Read tool.** It is already in your context
+  as project instructions — re-reading it costs ~10k tokens per subagent and
+  adds nothing. It is still the authority on card content, depth and format:
+  consult the copy you already have, and only `sed -n` a single section if you
+  need to re-check exact wording.
 - **Never call `update_note_fields`, `add_note` or `tag_management`.** Anki
   is read-only for this run; every change is staged as files (below). Where
   CLAUDE.md says to write a note or set tags, stage it instead.
@@ -271,7 +290,7 @@ So:
 - `update_note_fields` fails on a note open in the Anki browser. `apply`
   leaves such a change in `pending/` and prints ✗ — relay it, don't hide it;
   the next `apply` retries.
-- **A run is capped at the requested `N` notes (batches of 5), then it ends
+- **A run is capped at the requested `N` notes (batches of 10), then it ends
   on its own.** It also ends early if the user stops it or the backlog hits
   0. Never run open-endedly — see "Never start unprompted" for when starting
   is allowed at all. Migrating ~1,900 notes is many separate runs by design,

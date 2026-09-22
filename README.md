@@ -138,25 +138,52 @@ There are two ways cards get made:
 ### `loop.sh` — running maintenance overnight
 
 `flashcard-maintenance` only migrates a handful of notes per invocation
-(context management — one subagent per batch of 5 keeps each run small and
+(context management — one subagent per batch of 10 keeps each run small and
 reliable). `loop.sh` is what turns that into an unattended job:
 
 ```
-./loop.sh <number-of-runs>
+./loop.sh
 ```
 
+No arguments needed. That is 60 runs of 10 legacy cards, logged to `logs/`,
+and it keeps going if the terminal window closes. `./loop.sh 20` stops sooner.
+
 Each run launches a **fresh, non-interactive `claude -p` session** that
-invokes the skill on the next batch of stale notes, then exits. `loop.sh`
-just keeps starting new sessions back to back — one per line of output —
-until the requested number of runs is done. It also watches for rate-limit
-messages and sleeps (default one hour) before retrying the same run rather
-than failing the whole job. That combination — small isolated batches, a
-fresh session each time, automatic backoff — is what makes it safe to kick
-off before bed and wake up to a smaller backlog, without babysitting it or
-risking a wall of half-finished edits if a session runs out of steam.
+invokes the skill on the next batch of stale notes, then exits — so no
+session ever grows large enough to matter. Within a run, exactly **one
+subagent works at a time**: parallel batches finish sooner but each agent
+pays ~36k tokens of startup context before it sees a note, and three at once
+drain the rate limit three times as fast. Speed is not the goal; spending the
+limit slowly is.
+
+**It runs on your Claude subscription, never on API credit.** An exported
+`ANTHROPIC_API_KEY` silently takes precedence over the claude.ai login, so a
+long unattended job will quietly bill a pay-as-you-go account until the
+balance runs dry — which is exactly what happened here once. `loop.sh` now
+unsets `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` for its own runs
+(`ALLOW_API_KEY=1` overrides). With no key in the environment, exhausting the
+subscription produces a rate-limit error the loop can sleep on instead of a
+charge.
+
+Failure handling, by kind:
+
+| what happened | what the loop does |
+|---|---|
+| rate limit (`429`, usage limit, overloaded) | waits an hour, retries the same run, repeats |
+| out of credit (`billing_error`) | stops immediately — sleeping cannot fix a balance |
+| anything else | stops, keeps the raw stream in `logs/failed-run-N-*.log` |
 
 Tunable via environment variables (model, effort level, batch prompt, sleep
 intervals) — see the comments at the top of the script.
+
+### What a rebuild costs
+
+Measured on a real run (2026-09-22, Sonnet, 35 cards): roughly **78,000
+tokens per card**, of which the card itself is ~3,000 — the rest is context
+re-sent on every API call. Cost tracks **API calls, not cards per batch**: a
+worker that did 10 cards in 6 calls spent 37k tokens per card, while one that
+needed 14 calls for 14 cards spent 72k. Hence batching the file writes, and
+one agent at a time.
 
 ## Repo layout
 
@@ -166,7 +193,8 @@ CLAUDE.md                              the full content ruleset — card format,
 .claude/reference/anki-stylesheet.md   the note type's CSS
 .claude/reference/anki-templates.md    the note type's card template (incl. the fold script)
 .claude/settings.json                  Claude Code permissions for this project
-loop.sh                                unattended overnight batch runner
+loop.sh                                unattended overnight batch runner (just `./loop.sh`)
+logs/                                  run logs, incl. kept streams from failed runs (gitignored)
 docs/card-redesign.md                  design log behind the current card layout (closed/shipped)
 export/einfach-besser-500-b2.jsonl     a point-in-time export of the deck
 ```
