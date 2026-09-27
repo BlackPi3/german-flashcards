@@ -103,7 +103,7 @@ and the staged-id exclusion):
 
 | Order | Query | Bucket |
 |---|---|---|
-| 1 | `-Back:*class=\"ver\"*` | unstamped, pre-1.0 legacy |
+| 1 | `-"Back:*class=\"ver\"*"` | unstamped, pre-1.0 legacy |
 | 2 … | `"Back:*<span class=\"ver\">vX.Y.Z</span>*"` | one per changelog version below `VCUR`, oldest first |
 | last | `-"Back:*<span class=\"ver\">vVCUR</span>*"` | **catch-all:** anything still not at `VCUR` |
 
@@ -122,6 +122,15 @@ user.
 The stamp lives in the `Back` field, so these are field-content searches; the
 escaped quotes are required. Matching on the full `<span class="ver">…</span>`
 keeps `v1.0.0` from matching a stray version string elsewhere on the card.
+
+**Type the queries exactly as shown — the `\"` backslashes are part of the
+query string sent to `find_notes`, not markdown.** Dropping them breaks Anki's
+parser silently: `-Back:*class="ver"*` returns almost the whole deck, stamped
+notes included, with no error. So sanity-check once per run before pulling a
+batch: the legacy count plus the stamped count (`"Back:*class=\"ver\"*"`) must
+equal the deck total (`deck:"Einfach Besser! 500 B2"` alone). If they don't, or
+the legacy bucket comes back near the deck total, the query is malformed — fix
+it before taking any notes, never stage from it.
 
 Legacy first is deliberate: those cards have no badge, no `mn` box, dead `tl`
 classes and free-standing examples, so they are both the worst cards in the
@@ -279,6 +288,11 @@ So:
   would be a good moment — the user may be studying.
 
 ## Rules of engagement
+
+- **Never launch Anki.** If `find_notes` can't reach Anki (connection
+  refused, addon not connected), the user has closed it on purpose — stop the
+  run and say so. Never `open -a Anki` or start it any other way; that reopens
+  the app every time they quit it.
 
 - **Never bulk-edit.** Every note goes through a real rebuild against
   CLAUDE.md. A scripted find-and-replace on the HTML would produce notes that

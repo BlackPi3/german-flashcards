@@ -18,8 +18,8 @@
 #   PROMPT         prompt sent each run      (default: 10 legacy cards, stage only)
 #   ALLOWED_TOOLS  tools the prompt may use  (default: Skill,Agent,Read,Write,Bash,
 #                  mcp__anki__find_notes,mcp__anki__notes_info)
-#   DENIED_TOOLS   hard-blocked, so no run can write to Anki (default: every Anki write tool)
-#   SLEEP_ON_LIMIT seconds to wait when rate limited (default: 3600)
+#   DENIED_TOOLS   hard-blocked (default: every Anki write tool, plus launching apps)
+#   SLEEP_ON_LIMIT fallback wait when a rate limit reports no reset time (default: 3600)
 #   SLEEP_BETWEEN  seconds to wait between sessions (default: 2)
 #   PRETTY         1 = live filtered stream, 0 = plain final text (default: 1)
 #
@@ -63,7 +63,10 @@ DENIED_DEFAULT=""
 for t in $ANKI_WRITES; do
   DENIED_DEFAULT+="mcp__anki__$t,mcp__claude_ai_AnkiMCP__$t,"
 done
-DENIED_TOOLS="${DENIED_TOOLS:-${DENIED_DEFAULT%,}}"
+# Never let a run launch apps: finding Anki closed, a run once reopened it with
+# `open -a Anki` — every time you quit it.
+DENIED_DEFAULT+="Bash(open:*),Bash(osascript:*)"
+DENIED_TOOLS="${DENIED_TOOLS:-$DENIED_DEFAULT}"
 SLEEP_ON_LIMIT="${SLEEP_ON_LIMIT:-3600}"
 SLEEP_BETWEEN="${SLEEP_BETWEEN:-2}"
 PRETTY="${PRETTY:-1}"
@@ -152,9 +155,17 @@ while (( i < RUNS )); do
     echo "${RED}[run $i exit $status — ${elapsed}s]${OFF}"
   fi
 
-  # Classify on error-bearing lines only. Matching the whole transcript would
-  # trip on a flashcard that merely contains the word "Limit".
-  ERRTEXT=$(grep -aiE '"is_error":true|"type":"result"|"subtype":"error|error|limit|credit|balance|quota' "$RAW" | tail -n 60)
+  # Judge the session only by its final "result" event. Searching the whole
+  # stream misfires: every run carries a routine rate_limit_event status line,
+  # and any failed tool call inside the run is also marked "is_error":true.
+  RESULT=$(grep -a '"type":"result"' "$RAW" | tail -n 1)
+  if [[ -n "$RESULT" ]]; then
+    if grep -q '"is_error":true' <<<"$RESULT"; then ERRTEXT="$RESULT"; else ERRTEXT=""; fi
+  elif (( status != 0 )); then
+    ERRTEXT=$(tail -n 20 "$RAW")   # no result event at all (plain mode, or crashed early)
+  else
+    ERRTEXT=""
+  fi
 
   # --- out of credit: waiting changes nothing, so stop loudly ---
   if grep -qiE "credit balance is too low|insufficient (credits?|funds)|payment required|billing" <<<"$ERRTEXT"; then
@@ -168,15 +179,28 @@ while (( i < RUNS )); do
     exit 1
   fi
 
-  # --- rate limited: wait it out, re-checking every SLEEP_ON_LIMIT ---
+  # --- rate limited: sleep until the limit resets ---
+  # A limited run ends with {"type":"rate_limit_event","rate_limit_info":
+  # {"status":"rejected","resetsAt":<unix time>,"rateLimitType":"five_hour",…}}
+  # — the same reset time the app shows. Sleep until then plus a minute;
+  # fall back to SLEEP_ON_LIMIT only when the stream doesn't say.
   if grep -qiE "hit your limit|usage limit|rate.?limit|429|quota|overloaded" <<<"$ERRTEXT"; then
-    limit_waits=$(( ${limit_waits:-0} + 1 ))
-    total=$(( limit_waits * SLEEP_ON_LIMIT ))
-    printf "%sRate limited. Waiting %ss before retrying run %s (attempt %s, %sm waited so far; resume ~%s).%s\n" \
-      "$RED" "$SLEEP_ON_LIMIT" "$i" "$limit_waits" "$(( total / 60 ))" \
-      "$(date -v +"${SLEEP_ON_LIMIT}"S '+%H:%M' 2>/dev/null || date -d "+${SLEEP_ON_LIMIT} seconds" '+%H:%M' 2>/dev/null || echo '?')" "$OFF"
+    cp "$RAW" "logs/rate-limited-run-$i-$(date +%Y%m%d-%H%M%S).log"
+    REJECTED=$(grep -a '"type":"rate_limit_event"' "$RAW" | grep -a '"status":"rejected"' | tail -n 1)
+    resets_at=$(grep -oE '"resetsAt":[0-9]+' <<<"$REJECTED" | grep -oE '[0-9]+$')
+    limit_type=$(grep -oE '"rateLimitType":"[^"]+"' <<<"$REJECTED" | cut -d'"' -f4)
+    now=$(date +%s)
+    if [[ -n "$resets_at" ]] && (( resets_at > now )); then
+      wait_s=$(( resets_at - now + 60 ))
+      why="${limit_type:-limit} resets at $(date -r "$resets_at" '+%a %H:%M' 2>/dev/null || date -d "@$resets_at" '+%a %H:%M')"
+    else
+      wait_s=$SLEEP_ON_LIMIT
+      why="no reset time reported — retrying in $(( wait_s / 60 ))m"
+    fi
+    printf "%sRate limited (%s). Sleeping %sh%02dm, then retrying run %s.%s\n" \
+      "$RED" "$why" "$(( wait_s / 3600 ))" "$(( wait_s % 3600 / 60 ))" "$i" "$OFF"
     i=$(( i - 1 ))
-    sleep "$SLEEP_ON_LIMIT"
+    sleep "$wait_s"
     continue
   fi
 
@@ -189,8 +213,6 @@ while (( i < RUNS )); do
     grep -aiE '"is_error":true|"subtype":"error|error' "$RAW" | tail -n 5
     exit "$status"
   fi
-
-  limit_waits=0
 
   sleep "$SLEEP_BETWEEN"
 done
