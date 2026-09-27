@@ -36,6 +36,19 @@ since it's a CSS-only selector on an existing pattern.
 
 ## Current stylesheet
 
+**2026-09-23:** the `line-height` trick on `.c br + br` never really worked —
+an empty line can't be shorter than the parent's strut (`.c` line-height 1.6
+≈ 26px), so each section gap stayed one to two full blank lines. The
+section-gap `<br>`s adjacent to `.fq`/`.mn`/`.gr` are now `display:none` and
+the gap comes from margins (10px between sections, after a first pass at 4–6px felt too tight). Selectors are
+anchored to those blocks, so legacy cards without `mn`/`gr` keep their line
+breaks. `.mn`/`.gr` text dropped 16px → 14px. Gap above the badge cut too:
+`hr#answer` bottom margin → 4px, and on cards where an `mn` box follows, the
+badge becomes a block (both `<br>`s after it hidden) so it no longer sits in a
+full-height line box with extra space above the chip. `.mn-row` lays each
+meaning out as two columns (definition | example) on screens ≥760px wide; the
+rows are built by the template script (see `anki-templates.md`).
+
 Verified identical to the live Anki note type on 2026-09-08. Section gaps
 (`.c br + br`) cut another 50% this round (0.6em → 0.3em, on top of the
 0.8em → 0.6em from 2026-09-01) — smaller gaps deck-wide, per user request.
@@ -57,6 +70,21 @@ previously mirrored in `CLAUDE.md`.
 }
 .c  { font-size:16px; line-height:1.6; text-align:left; }
 .c br + br { line-height:0.3em; }
+/* Section gaps: hide the <br><br> between badge / mn / gr / stamp — margins below set the gap instead */
+.c > .fq + br + br:has(+ .mn),
+.c > .mn + br, .c > .mn + br + br,
+.c > .gr + br, .c > .gr + br + br { display:none; }
+.c > .mn, .c > .gr { font-size:14px; }
+/* Bedeutung in two columns on wide screens: definition left, example right (rows built by the template script) */
+.mn-row + .mn-row { margin-top:8px; }
+@media (min-width:760px) {
+    .mn-row { display:grid; grid-template-columns:1fr 1fr; column-gap:24px; }
+}
+/* Gap above the badge: tighten the divider, and lift the badge out of its 26px line box */
+hr#answer { margin-bottom:4px; }
+.c > .fq:has(+ br + br + .mn) { display:block; width:fit-content; }
+.c > .fq + br:has(+ br + .mn) { display:none; }
+.c > .mn, .c > .gr, .c > .ver { margin-top:10px; }
 .tr { color:#888; font-size:smaller; }
 .gr { border-left:3px solid #42A5F5; padding-left:10px; margin:4px 0; }
 .bl { color:#1565C0; }

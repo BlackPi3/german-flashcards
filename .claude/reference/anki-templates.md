@@ -65,12 +65,61 @@ if (!window.__foldQBound) {
     gr.appendChild(details);
   });
 })();
+
+(function () {
+  // Split each meaning in .mn into definition (left) + example (right); CSS makes them columns on wide screens.
+  function isJunk(n) {
+    return (n.nodeType === 1 && n.tagName === 'BR') || (n.nodeType === 3 && !n.textContent.trim());
+  }
+  function trim(arr) {
+    while (arr.length && isJunk(arr[0])) arr.shift();
+    while (arr.length && isJunk(arr[arr.length - 1])) arr.pop();
+    return arr;
+  }
+  function wrap(cls, arr) {
+    var d = document.createElement('div');
+    d.className = cls;
+    arr.forEach(function (n) { d.appendChild(n); });
+    return d;
+  }
+  document.querySelectorAll('.mn').forEach(function (mn) {
+    if (mn.querySelector('.mn-row') || !mn.querySelector('.ex')) return;
+    var head = [], groups = [], cur = null;
+    Array.prototype.slice.call(mn.childNodes).forEach(function (n) {
+      var txt = (n.nodeType === 1 && n.tagName === 'B') ? n.textContent.trim() : null;
+      if (txt !== null && !groups.length && /^Bedeutung/.test(txt)) {
+        head.push(n); cur = []; groups.push(cur); return;
+      }
+      if (txt !== null && /^\d+\.$/.test(txt)) { cur = []; groups.push(cur); }
+      if (cur) cur.push(n); else head.push(n);
+    });
+    groups = groups.map(trim).filter(function (g) { return g.length; });
+    if (!groups.length) return;
+    while (mn.firstChild) mn.removeChild(mn.firstChild);
+    trim(head).forEach(function (n) { mn.appendChild(n); });
+    groups.forEach(function (g) {
+      var row = document.createElement('div');
+      row.className = 'mn-row';
+      var exIdx = -1;
+      for (var i = 0; i < g.length; i++) {
+        if (g[i].nodeType === 1 && g[i].classList.contains('ex')) { exIdx = i; break; }
+      }
+      if (exIdx === -1) {
+        row.appendChild(wrap('mn-def', g));
+      } else {
+        row.appendChild(wrap('mn-def', trim(g.slice(0, exIdx))));
+        row.appendChild(wrap('mn-ex', trim(g.slice(exIdx))));
+      }
+      mn.appendChild(row);
+    });
+  });
+})();
 </script>
 ```
 
 ### What the script does
 
-Two independent pieces, both scoped to the rendered DOM — neither touches the
+Three independent pieces, all scoped to the rendered DOM — none touches the
 note's stored fields:
 
 1. **`Q` toggles every fold on the card.** A `window.__foldQBound` guard stops
@@ -89,6 +138,16 @@ note's stored fields:
    Until v3.0.0 the script pulled it in, but `<summary>` already starts a new
    line, so that `<br>` showed up as an empty line every time the fold was
    opened.
+
+3. **Bedeutung in two columns (since 2026-09-23).** For each `.mn` box that
+   has an example, it splits the content at the numbered `<b>1.</b>`,
+   `<b>2.</b>` markers (or takes everything after `<b>Bedeutung:</b>` on a
+   single-meaning card) and wraps each meaning in a `div.mn-row` holding
+   `div.mn-def` (badge, definition, both English lines) and `div.mn-ex`
+   (example + its translation). The CSS in the stylesheet mirror puts the two
+   side by side at ≥760px width and leaves them stacked below that, so phones
+   are unaffected. `.mn` boxes without an `.ex` (some legacy cards) are left
+   alone.
 
 This is why folding needed **zero migration** across ~2,400 existing notes:
 the transformation runs once per render, driven purely by which CSS classes
