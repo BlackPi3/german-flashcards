@@ -93,6 +93,18 @@ below (e.g. `deck:"Einfach Besser! 500 B2" -nid:123,456 "Back:*<span class=\"ver
 staged note still carries its old stamp in Anki; without the exclusion it gets
 rebuilt twice. Counts reported to the user are likewise *after* exclusion.
 
+**The user's rebuild list comes first.** `rebuild.txt` at the repo root holds
+fronts of cards the user flagged as thin or wrong — a card can be at `VCUR` and
+still be thin, so the version buckets below never find it. Read the file
+(ignore blank lines and lines starting with `#`), look each front up with
+`find_notes` (`deck:"Einfach Besser! 500 B2" "Front:<front>"`, after the
+staged-id exclusion), and take those notes ahead of any bucket, up to the
+batch size. Once a rebuild is **staged**, delete its line from `rebuild.txt`;
+if a staged rebuild later lands in `staged/conflicts/`, put its front back.
+A front that matches no note: leave the line and say so in the summary. Listed
+notes count toward `N`, and the remaining-backlog number reported to the user
+includes the lines still in the file.
+
 **The backlog is every note not stamped `VCUR`** — whatever its stamp, it is
 older than current. Work it oldest first, as buckets.
 
@@ -235,9 +247,10 @@ verdict (rebuild / patch-to-`VCUR` / re-tag only), and `VCUR`. Brief it to:
 - Decide **Vollkarte vs. Kurzkarte from the badge** before writing (Rule 19c).
   A Kurzkarte is the right size, not a worse card — never pad one out.
 - Stamp `VCUR` and list the note's tags in the `.json` `tags` array —
-  `Regeln::vVCUR`, `Häufigkeit::`, `Register::`, plus `Karte::IT` /
+  `Regeln::vVCUR`, `Häufigkeit::`, `Register::`, `Gewicht::` (derived per
+  CLAUDE.md Rule 26; none on ⚙ cards), plus `Karte::IT` /
   `Karte::Grammatik` where they apply. List **only these managed tags**: on
-  apply, stale `Regeln::`/`Häufigkeit::`/`Register::`/`Karte::` tags are
+  apply, stale `Regeln::`/`Häufigkeit::`/`Register::`/`Gewicht::`/`Karte::` tags are
   removed and any other tag on the note is left alone. `apply` rejects a change
   whose `Regeln::` tag doesn't match its stamp.
 - **Keep the front unless it is actually wrong** under CLAUDE.md's front rules.

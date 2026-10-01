@@ -1,0 +1,7 @@
+# Cards to rebuild — thin or wrong, even if their version stamp is current.
+# One front per line, exactly as it appears on the card (Verletzung, sich verletzen, ⚙ wohin? …).
+# Lines starting with # and blank lines are ignored. Add to it whenever you spot a thin card.
+# The maintenance run works this list FIRST, before the version backlog, and removes a line
+# once its rebuild is staged. Nothing here touches Anki until you run `apply`.
+
+Verletzung

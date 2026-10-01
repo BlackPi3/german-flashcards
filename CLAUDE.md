@@ -44,14 +44,14 @@ A Kurzkarte is the **right size** for a word I only need to recognise, not a wor
 
 ---
 
-## Rules Version: **3.0.0**
+## Rules Version: **3.0.1**
 
 Every card is stamped with the rules version it was created under, so we always know whether a card is stale.
 
 ### Stamp
 Last element inside `<div class="c">`, immediately before the closing `</div>`:
 ```html
-<br><br><span class="ver">v3.0.0</span>
+<br><br><span class="ver">v3.0.1</span>
 ```
 - **No stamp = legacy card** (pre-1.0). Assume it is stale and needs a full rebuild when touched.
 - Always stamp with the version **current at creation time**, never backdate.
@@ -163,7 +163,7 @@ A card is **three blocks**: the badge, what the word means, how the word works. 
 [grammar content by word type — see below; every line starts with <br>, each pattern with its own example]
 </div>
 
-<br><br><span class="ver">v3.0.0</span>
+<br><br><span class="ver">v3.0.1</span>
 
 </div>
 ```
@@ -360,7 +360,7 @@ Input:
 
 Front: `scheitern`
 
-Tags: `Regeln::v3.0.0 Häufigkeit::mittel Register::gesprochen`
+Tags: `Regeln::v3.0.1 Häufigkeit::mittel Register::gesprochen`
 
 Note the filter at work: `an etwas scheitern` is **not** a Kollokation here because it's already the valency pattern; `misslingen`/`fehlschlagen` are true synonyms but more written, so the spoken `schiefgehen` leads and they're marked; the everyday `klappen` leads the antonyms. Three examples, each proving one thing: the meaning, the `an + Dat` pattern, the Wendung. None of them floats at the bottom.
 
@@ -401,7 +401,7 @@ Back:
 <br><span class="tl-ant">Antonym: klappen, gelingen</span>
 </div>
 
-<br><br><span class="ver">v3.0.0</span>
+<br><br><span class="ver">v3.0.1</span>
 
 </div>
 ```
@@ -414,16 +414,18 @@ Applied directly on the note — via the `tags` list on `add_note` for a new car
 
 | Tag | Values | On which cards |
 |---|---|---|
-| `Regeln::vX.Y.Z` | e.g. `Regeln::v3.0.0` | every card — always identical to the `ver` stamp |
+| `Regeln::vX.Y.Z` | e.g. `Regeln::v3.0.1` | every card — always identical to the `ver` stamp |
 | `Häufigkeit::…` | `hoch` · `mittel` · `niedrig` | every word card |
 | `Register::…` | `gesprochen` · `neutral` · `eher_schriftlich` · `Amtssprache` | every word card |
 | `Karte::Grammatik` | — | ⚙ Grammatikkarten only |
 | `Karte::IT` | — | IT / tech vocabulary only |
+| `Gewicht::…` | `rot` · `orange` · `gelb` · `grau` | every word card (not ⚙ cards — undecided) |
 
 ```
-add_note(..., tags=["Regeln::v3.0.0", "Häufigkeit::hoch", "Register::neutral"])
-add_note(..., tags=["Regeln::v3.0.0", "Häufigkeit::mittel", "Register::eher_schriftlich", "Karte::IT"])
-add_note(..., tags=["Regeln::v3.0.0", "Karte::Grammatik"])   # ⚙ card
+add_note(..., tags=["Regeln::v3.0.1", "Häufigkeit::hoch", "Register::neutral", "Gewicht::rot"])
+add_note(..., tags=["Regeln::v3.0.1", "Häufigkeit::mittel", "Register::eher_schriftlich", "Gewicht::gelb"])
+add_note(..., tags=["Regeln::v3.0.1", "Häufigkeit::mittel", "Register::eher_schriftlich", "Karte::IT", "Gewicht::rot"])
+add_note(..., tags=["Regeln::v3.0.1", "Karte::Grammatik"])   # ⚙ card
 ```
 
 - **The two `Karte::` tags are flags, not an enum.** Absence means "ordinary word card" — there is no `Karte::Wort`. Both mark something that *changes how the card is built*: a ⚙ card has no badge and no vocabulary content, and IT overrides register to force a Vollkarte. **Nothing else goes under `Karte::`** — topic tags (`Arbeit`, `Einkauf`) go stale and turn it into a junk drawer.
@@ -434,7 +436,17 @@ add_note(..., tags=["Regeln::v3.0.0", "Karte::Grammatik"])   # ⚙ card
   ```
   tag:Karte::IT OR ((tag:Register::gesprochen OR tag:Register::neutral) -tag:Häufigkeit::niedrig)
   ```
-- **Going forward only.** Tags are written on **new cards and on rebuilds**. Nothing is ever retro-tagged, and an untagged note just means "not touched since tags existed" — exactly like a missing version stamp. Bulk-tagging older notes, if ever wanted, is a `tag_management` `batch_tags` call, not a file rewrite.
+- **`Gewicht::` is how much weight a card deserves — shown on the front as four pips.** The Anki card template reads the tag and draws the pips below the front word (🔴 ●●●● · 🟠 ●●●○ · 🟡 ●●○○ · ⚪ ●○○○); a note without the tag shows no pips. Nothing is authored in the `Front`/`Back` HTML. It is **derived from the other tags, first match wins**, so tag and badge never disagree:
+
+  | Gewicht | Rule |
+  |---|---|
+  | `rot` — say it, often | `Karte::IT` + `hoch`/`mittel`; or non-IT `gesprochen`/`neutral` + `hoch` |
+  | `orange` — important | `Karte::IT` + `niedrig`; or non-IT `gesprochen`/`neutral` + `mittel` |
+  | `gelb` — common, but written | non-IT `eher_schriftlich`/`Amtssprache` + `hoch`/`mittel` |
+  | `grau` — recognise only | non-IT `niedrig`, any register |
+
+  `rot`/`orange` cards are Vollkarten, `gelb`/`grau` are Kurzkarten (the depth table above stays authoritative). A lighter, meaning-only form for `grau` is not defined yet. Red is meant to be the bulk of the deck, so there is no cap — but it is earned by the badge, never assigned by feel.
+- **Going forward only — except `Gewicht::`.** Other tags are written on **new cards and on rebuilds**, never retro-tagged; an untagged note just means "not touched since tags existed" — exactly like a missing version stamp. `Gewicht::` is the one exception: it is pure derivation from tags a note already carries, so it was applied deck-wide on 2026-10-01 (notes without a `Häufigkeit::` tag, i.e. legacy cards, were skipped and get theirs on rebuild). Bulk-tagging is a `tag_management` `batch_tags` call, not a file rewrite.
 
 ## Duplicate Detection
 
@@ -484,6 +496,8 @@ Numbering is stable — never renumber; add sub-numbers instead.
 23. **Tags:** every note carries `Regeln::vX.Y.Z` (identical to the stamp), `Häufigkeit::`, `Register::`, plus the flags `Karte::Grammatik` and `Karte::IT` where they apply — set via `add_note`'s `tags` list or `tag_management`. Values mirror the badge wording. New cards and rebuilds only; never retro-tag. See Tags.
 24. **Three blocks:** badge → `mn` box (Bedeutung / Bedeutungen) → `gr` box (Grammatik) → stamp, and nothing outside them. **One `mn` box per card** however many meanings it holds — numbered inside, never a second box. A ⚙ Grammatikkarte has no `mn` box at all. The stylesheet lives in the Anki note type, never inline in the `Back` field.
 25. **The reference tail folds automatically — it is never the grading target.** The card template collapses everything in the `gr` box *after* `bl` — `vl` and its `ex`/`tr`, plus `tl-nom`, `tl-fw`, `tl-nvv`, `tl-kl`, `tl-rm`, `tl-syn` and `tl-ant` — behind a `<details>` at render time on every card, old and new — nothing to author, no per-card markup. This sets what Again/Hard/Good/Easy is actually judged on: badge, `mn` box, and the `bl` line are the whole test — did I know the meaning, the article/plural, or the conjugation? Valency patterns and everything below them are depth material for building expertise, opened by choice, never something the grade depends on. This constrains where content goes: the bare grammatical facts that make a word usable — gender, plural, regular/irregular, notable conjugation forms, Perfekt auxiliary — belong in `bl`; everything that shows *how* the word is used, including `vl`, is reference-only and gets folded away by design.
+
+26. **Gewicht tag:** every word card also carries `Gewicht::rot|orange|gelb|grau`, derived from `Häufigkeit`, `Register` and `Karte::IT` by the table in Tags (first match wins). It is a tag only — never written into the `Front`/`Back` HTML; the card template draws the pips. ⚙ Grammatikkarten carry none for now.
 
 ## Skill routing
 

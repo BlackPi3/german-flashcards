@@ -19,7 +19,7 @@ Staged change = <key>.back.html (the full Back field) + <key>.json (written last
   new note: staged/pending/add-<slug>.json
     {"op": "add", "front": "schiefgehen", "tags": [...], "summary": "..."}
 
-`tags` lists only the managed tags (Regeln::, Häufigkeit::, Register::, Karte::);
+`tags` lists only the managed tags (Regeln::, Häufigkeit::, Register::, Gewicht::, Karte::);
 any other tag already on the note is left alone.
 
 On apply, a rebuild whose note changed in Anki since it was staged (mod differs
@@ -44,7 +44,7 @@ CONFLICTS = ROOT / "conflicts"
 ANKI_URL = "http://127.0.0.1:3141/"
 DECK = "Einfach Besser! 500 B2"
 MODEL = "Einfach Besser!"
-MANAGED_PREFIXES = ("regeln::", "häufigkeit::", "register::", "karte::")
+MANAGED_PREFIXES = ("regeln::", "häufigkeit::", "register::", "gewicht::", "karte::")
 
 
 # --- staged files -----------------------------------------------------------
