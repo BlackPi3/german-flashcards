@@ -5,6 +5,10 @@ at a German text, a screenshot of a textbook page with underlined words, or a
 fill-in-the-blank exercise, and it writes properly structured flashcards
 straight into a live Anki collection — no CSV export, no manual import.
 
+**Current state:** 2,800+ notes, 1,050 of them tagged as core spoken/IT
+vocabulary (the deck's highest-priority tier), 83 IT-specific cards, 23
+grammar-contrast (`⚙`) cards.
+
 **Current focus: spoken German.** Vocabulary I'd actually use in conversation
 (plus anything IT/software-related, since that's my work) gets full cards.
 Formal, bureaucratic, or rare vocabulary still gets a card if it came up
@@ -25,6 +29,12 @@ the `Q` shortcut:
 <tr><td align="center">front</td><td align="center">back — fold collapsed</td><td align="center">back — fold expanded (<code>Q</code>)</td></tr>
 </table>
 
+- **Front** — the word, plus a small pip chip showing how much the word is
+  worth focusing on (importance, derived from frequency/register/IT-relevance,
+  never hand-picked) and, below it, a chip for its register and spoken
+  equivalent if it has one. Both are read off the note's tags and the back's
+  badge text by the card template at render time — nothing extra is typed
+  into the card to make this appear.
 - **Badge** — `Häufigkeit` (how common the word is: `hoch`/`mittel`/`niedrig`)
   and `Register` (how it's actually used: `gesprochen`/`neutral`/`eher
   schriftlich`/`Amtssprache`). Anything not already `gesprochen` also names
@@ -135,6 +145,17 @@ There are two ways cards get made:
   behind the current format. The `.claude/skills/flashcard-maintenance` skill
   reworks stale notes back up to the current rules version, batch by batch.
 
+Maintenance never writes to Anki directly. Every rebuild is staged as a file
+under `staged/pending/` first (`anki_stage.py`), so the collection stays free
+to study from mid-run. `anki_stage.py apply` is the one step that pushes
+staged changes into Anki, and before it does, `validate()` rejects anything
+that's structurally broken (no version stamp, tag/stamp mismatch) **or**
+actually incomplete under `CLAUDE.md` — a Noun/Verb card with no valency
+line, a meaning with no example, a word card with no importance tag. That
+gate exists because a rebuild can otherwise *look* done (current stamp, right
+tags) while quietly carrying over thin old content — staging catches that
+before it reaches the collection, not after.
+
 ### `loop.sh` — running maintenance overnight
 
 `flashcard-maintenance` only migrates a handful of notes per invocation
@@ -193,9 +214,13 @@ CLAUDE.md                              the full content ruleset — card format,
 .claude/reference/anki-stylesheet.md   the note type's CSS
 .claude/reference/anki-templates.md    the note type's card template (incl. the fold script)
 .claude/settings.json                  Claude Code permissions for this project
+anki_stage.py                          staging + validation for maintenance writes (status/apply)
+rebuild.txt                            fronts flagged as thin/wrong, worked before the version backlog
+staged/                                pending/applied/conflicted maintenance writes (gitignored)
 loop.sh                                unattended overnight batch runner (just `./loop.sh`)
 logs/                                  run logs, incl. kept streams from failed runs (gitignored)
 docs/card-redesign.md                  design log behind the current card layout (closed/shipped)
+docs/project-summary.md                plain-language project summary (scope, scale, stack)
 export/einfach-besser-500-b2.jsonl     a point-in-time export of the deck
 ```
 
