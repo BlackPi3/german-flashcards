@@ -83,6 +83,43 @@ def validate(meta, back):
     regeln = [t for t in meta.get("tags", []) if t.lower().startswith("regeln::")]
     if regeln != [f"Regeln::v{stamp.group(1)}"]:
         return f"Regeln tag {regeln} does not match stamp v{stamp.group(1)}"
+    return content_issue(meta, back)
+
+
+def content_issue(meta, back):
+    """Catch a shallow reflow masquerading as a real rebuild (CLAUDE.md Rule 15).
+
+    Deliberately narrow: each check only fires where the rules give no room for
+    a legitimate exception, so a correct card is never rejected. A card can
+    pass every check here and still be thin in ways these can't see (wrong
+    register, a missing Feste Wendung) — this is a floor, not a full review.
+    """
+    is_grammatik = meta.get("front", "").strip().startswith("⚙")
+
+    if not is_grammatik:
+        has_gewicht = any(t.lower().startswith("gewicht::") for t in meta.get("tags", []))
+        if not has_gewicht:
+            return "word card has no Gewicht:: tag (Rule 26)"
+
+    mn = re.search(r'<div class="mn">(.*?)</div>', back, re.S)
+    if mn and not is_grammatik:
+        mn_html = mn.group(1)
+        numbered = re.findall(r'<b>(\d+)\.</b>', mn_html)
+        meanings = len(numbered) if numbered else 1
+        examples = len(re.findall(r'class="ex"', mn_html))
+        if examples != meanings:
+            return f"{meanings} meaning(s) but {examples} example(s) in mn box (Rule 4a)"
+
+    gr = re.search(r'<div class="gr">(.*?)</div>', back, re.S)
+    if gr and not is_grammatik:
+        bl = re.search(r'<span class="bl">(.*?)</span>', gr.group(1), re.S)
+        bl_text = bl.group(1) if bl else ""
+        is_noun = "Plural:" in bl_text
+        is_verb = bool(re.search(r'\b(ir)?regular\b', bl_text))
+        if (is_noun or is_verb) and 'class="vl"' not in gr.group(1):
+            kind = "Noun" if is_noun else "Verb"
+            return f"{kind} card has no vl span (Rule 7)"
+
     return None
 
 

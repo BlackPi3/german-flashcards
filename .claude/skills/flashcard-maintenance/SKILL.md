@@ -41,6 +41,17 @@ area**: every backlog query excludes staged ids (step 2).
 `staged/conflicts/`, and the note simply comes back through the queue for a
 fresh rebuild.
 
+**`validate()` also rejects a shallow reflow, not just malformed staging
+files.** A 2026-09-22 run re-flowed old thin content into the new HTML wrapper
+instead of rebuilding from scratch (Rule 15) — the note passed every
+structural check (stamp present, tag matches stamp) while still missing a
+`vl` span or an example for one of its meanings. As of 2026-10-12, `apply`
+also rejects: a Noun/Verb card with no `vl` span (Rule 7), a meaning with no
+matching example in the `mn` box (Rule 4a), and any non-⚙ word card with no
+`Gewicht::` tag (Rule 26). These are narrow on purpose — a legitimate
+no-case adjective still passes — so a rejection here means **rebuild the
+word from scratch**, not patch around the specific line the error names.
+
 ## Argument: how many notes this run
 
 `/flashcard-maintenance [N]` — `N` is the total number of notes to migrate
