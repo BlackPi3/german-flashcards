@@ -44,14 +44,14 @@ A Kurzkarte is the **right size** for a word I only need to recognise, not a wor
 
 ---
 
-## Rules Version: **3.0.1**
+## Rules Version: **3.0.2**
 
 Every card is stamped with the rules version it was created under, so we always know whether a card is stale.
 
 ### Stamp
 Last element inside `<div class="c">`, immediately before the closing `</div>`:
 ```html
-<br><br><span class="ver">v3.0.1</span>
+<br><br><span class="ver">v3.0.2</span>
 ```
 - **No stamp = legacy card** (pre-1.0). Assume it is stale and needs a full rebuild when touched.
 - Always stamp with the version **current at creation time**, never backdate.
@@ -163,7 +163,7 @@ A card is **three blocks**: the badge, what the word means, how the word works. 
 [grammar content by word type — see below; every line starts with <br>, each pattern with its own example]
 </div>
 
-<br><br><span class="ver">v3.0.1</span>
+<br><br><span class="ver">v3.0.2</span>
 
 </div>
 ```
@@ -225,6 +225,8 @@ On the card, `Register` is written in its short form — `schriftl.` for *eher s
 ```
 
 The opening badge describes the **leading meaning** — the one listed first.
+
+**Where it renders (since v3.0.2).** Still authored exactly as above, as the first element of `Back` — but the card template hides it on the back and shows its `Register`, `gespr.:` and any usage warning as chips on the **front**, under the Gewicht pips (Häufigkeit needs no chip; the pips already encode it). So the badge's wording is what appears on the front: keep it short. Per-meaning badges inside the `mn` box are unaffected and stay on the back.
 
 **Neither axis is ever a reason to skip a card** — together they decide the card's *size*, never its existence. If a word came up, it gets a card. `eher schriftlich` + `hoch` is a good Kurzkarte, and so is `niedrig` + anything outside IT.
 
@@ -360,7 +362,7 @@ Input:
 
 Front: `scheitern`
 
-Tags: `Regeln::v3.0.1 Häufigkeit::mittel Register::gesprochen`
+Tags: `Regeln::v3.0.2 Häufigkeit::mittel Register::gesprochen`
 
 Note the filter at work: `an etwas scheitern` is **not** a Kollokation here because it's already the valency pattern; `misslingen`/`fehlschlagen` are true synonyms but more written, so the spoken `schiefgehen` leads and they're marked; the everyday `klappen` leads the antonyms. Three examples, each proving one thing: the meaning, the `an + Dat` pattern, the Wendung. None of them floats at the bottom.
 
@@ -401,7 +403,7 @@ Back:
 <br><span class="tl-ant">Antonym: klappen, gelingen</span>
 </div>
 
-<br><br><span class="ver">v3.0.1</span>
+<br><br><span class="ver">v3.0.2</span>
 
 </div>
 ```
@@ -414,7 +416,7 @@ Applied directly on the note — via the `tags` list on `add_note` for a new car
 
 | Tag | Values | On which cards |
 |---|---|---|
-| `Regeln::vX.Y.Z` | e.g. `Regeln::v3.0.1` | every card — always identical to the `ver` stamp |
+| `Regeln::vX.Y.Z` | e.g. `Regeln::v3.0.2` | every card — always identical to the `ver` stamp |
 | `Häufigkeit::…` | `hoch` · `mittel` · `niedrig` | every word card |
 | `Register::…` | `gesprochen` · `neutral` · `eher_schriftlich` · `Amtssprache` | every word card |
 | `Karte::Grammatik` | — | ⚙ Grammatikkarten only |
@@ -422,10 +424,10 @@ Applied directly on the note — via the `tags` list on `add_note` for a new car
 | `Gewicht::…` | `rot` · `orange` · `gelb` · `grau` | every word card (not ⚙ cards — undecided) |
 
 ```
-add_note(..., tags=["Regeln::v3.0.1", "Häufigkeit::hoch", "Register::neutral", "Gewicht::rot"])
-add_note(..., tags=["Regeln::v3.0.1", "Häufigkeit::mittel", "Register::eher_schriftlich", "Gewicht::gelb"])
-add_note(..., tags=["Regeln::v3.0.1", "Häufigkeit::mittel", "Register::eher_schriftlich", "Karte::IT", "Gewicht::rot"])
-add_note(..., tags=["Regeln::v3.0.1", "Karte::Grammatik"])   # ⚙ card
+add_note(..., tags=["Regeln::v3.0.2", "Häufigkeit::hoch", "Register::neutral", "Gewicht::rot"])
+add_note(..., tags=["Regeln::v3.0.2", "Häufigkeit::mittel", "Register::eher_schriftlich", "Gewicht::gelb"])
+add_note(..., tags=["Regeln::v3.0.2", "Häufigkeit::mittel", "Register::eher_schriftlich", "Karte::IT", "Gewicht::rot"])
+add_note(..., tags=["Regeln::v3.0.2", "Karte::Grammatik"])   # ⚙ card
 ```
 
 - **The two `Karte::` tags are flags, not an enum.** Absence means "ordinary word card" — there is no `Karte::Wort`. Both mark something that *changes how the card is built*: a ⚙ card has no badge and no vocabulary content, and IT overrides register to force a Vollkarte. **Nothing else goes under `Karte::`** — topic tags (`Arbeit`, `Einkauf`) go stale and turn it into a junk drawer.

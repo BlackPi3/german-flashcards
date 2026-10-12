@@ -5,3 +5,4 @@
 # once its rebuild is staged. Nothing here touches Anki until you run `apply`.
 
 Verletzung
+fleißig

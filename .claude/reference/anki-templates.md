@@ -15,10 +15,118 @@ fields never contain a `<details>` element or the script below.
 ## Card 1 — Front
 
 ```html
-{{Front}}
+<div class="wgt" data-tags="{{Tags}}">{{Front}}</div>
+<template class="bk-src">{{Back}}</template>
+
+<script>
+(function () {
+  var box = document.querySelector('.wgt');
+  if (!box || box.querySelector('.wgt-chiprow')) return;
+  var PIPS = { rot: 4, orange: 3, gelb: 2, grau: 1 };
+  var m = (box.getAttribute('data-tags') || '').match(/Gewicht::(rot|orange|gelb|grau)/);
+  if (!m) return;
+  var row = document.createElement('div');
+  row.className = 'wgt-chiprow';
+  var chip = document.createElement('span');
+  chip.className = 'wgt-chip ' + m[1];
+  for (var i = 0; i < 4; i++) {
+    var dot = document.createElement('i');
+    if (i >= PIPS[m[1]]) dot.className = 'off';
+    chip.appendChild(dot);
+  }
+  row.appendChild(chip);
+  box.appendChild(row);
+})();
+
+(function () {
+  // Register + spoken equivalent (+ any usage warning) as chips under the pips.
+  // The badge is hidden on the back; its text is read from the inert <template> copy of the Back field.
+  var box = document.querySelector('.wgt');
+  if (!box || box.querySelector('.wgt-meta')) return;
+  var tags = box.getAttribute('data-tags') || '';
+  var src = document.querySelector('template.bk-src');
+  var badge = src && src.content ? src.content.querySelector('.c > .fq:first-child') : null;
+  var segs = badge ? badge.textContent.split('·').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean) : [];
+  if (segs.length && segs[0].charAt(0) === '⚙') return;
+  var REG = { gesprochen: 'gesprochen', neutral: 'neutral', eher_schriftlich: 'schriftl.', Amtssprache: 'Amtsspr.' };
+  var r = tags.match(/Register::(\S+)/);
+  var reg = r ? (REG[r[1]] || r[1].replace(/_/g, ' ')) : null;
+  var spoken = null, extras = [];
+  segs.forEach(function (s) {
+    var mm;
+    if (/^H.ufigkeit\s*:/.test(s)) return;
+    if ((mm = s.match(/^Register\s*:\s*(.+)$/))) { if (!reg) reg = mm[1]; return; }
+    if ((mm = s.match(/^(?:gespr\.|gesprochen sagt man eher|gesprochen)\s*:\s*(.+)$/))) { spoken = mm[1]; return; }
+    extras.push(s);
+  });
+  var items = [];
+  if (reg) items.push(['reg', reg]);
+  if (spoken) items.push(['sp', 'gespr.: ' + spoken]);
+  extras.forEach(function (e) { items.push(['x', e]); });
+  if (!items.length) return;
+  var w = tags.match(/Gewicht::(rot|orange|gelb|grau)/);
+  var row = document.createElement('div');
+  row.className = 'wgt-meta';
+  items.forEach(function (it) {
+    var chip = document.createElement('span');
+    chip.className = 'wgt-tag ' + (w ? w[1] : 'grau') + ' ' + it[0];
+    chip.textContent = it[1];
+    row.appendChild(chip);
+  });
+  box.appendChild(row);
+})();
+
+(function () {
+  // Speaker button: plays _tts_<front word>.mp3 on tap only, never automatically.
+  // Shown only on notes tagged Audio::Wort, so cards without a file never get a dead button.
+  var box = document.querySelector('.wgt');
+  if (!box || box.querySelector('.say-btn')) return;
+  if (!/(^|\s)Audio::Wort(\s|$)/.test(box.getAttribute('data-tags') || '')) return;
+  var SKIP = ['wgt-chiprow', 'wgt-meta', 'say-btn'];
+  var word = '';
+  Array.prototype.forEach.call(box.childNodes, function (n) {
+    if (n.nodeType === 1 && SKIP.some(function (c) { return n.classList.contains(c); })) return;
+    word += n.textContent;
+  });
+  word = word.replace(/\s+/g, ' ').trim();
+  if (word.normalize) word = word.normalize('NFC');
+  if (!word) return;
+  var file = '_tts_' + word.replace(/[\/\\:*?"<>|#]/g, '_') + '.mp3';
+  var audio = null;
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'say-btn';
+  btn.textContent = '🔊';
+  btn.title = 'Aussprache anhören (Taste: R)';
+  btn.style.cssText = 'display:block;margin:6px auto 0;font-size:22px;line-height:1;padding:4px 10px;border:none;border-radius:8px;background:transparent;cursor:pointer;';
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (!audio) audio = new Audio(encodeURIComponent(file));
+    audio.currentTime = 0;
+    audio.play();
+  });
+  box.appendChild(btn);
+})();
+
+// R (Anki's "replay audio" key) only replays [sound:] tags, so route it to the speaker button too.
+if (!window.__sayRBound) {
+  window.__sayRBound = true;
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key && e.key.toLowerCase() === 'r') {
+      var b = document.querySelector('.say-btn');
+      if (b) b.click();
+    }
+  });
+}
+</script>
 ```
 
-Unmodified from Basic.
+### What the front script does (since 2026-10-06)
+
+1. **Gewicht pips** (v3.0.1): reads `Gewicht::rot|orange|gelb|grau` from `{{Tags}}` and draws four dots under the word.
+2. **Badge chips** (v3.0.2): `{{Back}}` is embedded in an inert `<template class="bk-src">` — not rendered, its scripts and images don't run or load, and `document.querySelectorAll` doesn't see into it. The script reads the opening `.fq` badge from it and renders `Register` (from the `Register::` tag, falling back to the badge text), `gespr.: …` and any usage warning as `.wgt-tag` chips under the pips, tinted with the note's Gewicht colour. ⚙ cards (badge starts with ⚙) get no chips. **Caveat:** any `[sound:]` tag in a `Back` field would now also play on the front, because Anki extracts audio tags from the whole rendered question — keep audio out of `Back` (checked: none as of 2026-10-06).
+3. **Speaker button** (pilot): on notes tagged `Audio::Wort`, a 🔊 button plays `_tts_<front text>.mp3` from the media folder on tap only — never autoplay. Filename: front text with whitespace collapsed, NFC-normalised, `/\:*?"<>|#` → `_`. The leading underscore keeps Anki's Check Media from flagging the files as unused. A global `keydown` handler routes `R` to the button, since Anki's own R only replays `[sound:]` tags.
 
 ## Card 1 — Back
 
@@ -30,6 +138,21 @@ Unmodified from Basic.
 {{Back}}
 
 <script>
+(function () {
+  // The opening badge is hidden by CSS (it now shows as chips on the front, under the pips).
+  // Drop the <br>s that followed it, so no blank line is left at the top of the back.
+  document.querySelectorAll('.c').forEach(function (c) {
+    var f = c.firstElementChild;
+    if (!f || !f.classList.contains('fq')) return;
+    var n = f.nextSibling;
+    while (n && ((n.nodeType === 3 && !n.textContent.trim()) || n.nodeName === 'BR')) {
+      var next = n.nextSibling;
+      c.removeChild(n);
+      n = next;
+    }
+  });
+})();
+
 if (!window.__foldQBound) {
   window.__foldQBound = true;
   document.addEventListener('keydown', function (e) {
@@ -119,9 +242,10 @@ if (!window.__foldQBound) {
 
 ### What the script does
 
-Three independent pieces, all scoped to the rendered DOM — none touches the
+Four independent pieces, all scoped to the rendered DOM — none touches the
 note's stored fields:
 
+0. **Drop the opening badge's leftover line breaks (v3.0.2).** CSS hides the badge (`.card .c > .fq:first-child`); this removes the `<br>`s and whitespace right after it so the back starts without a blank line.
 1. **`Q` toggles every fold on the card.** A `window.__foldQBound` guard stops
    duplicate listeners from stacking when Anki re-renders the same card
    (e.g. after an answer is shown).

@@ -36,6 +36,12 @@ since it's a CSS-only selector on an existing pattern.
 
 ## Current stylesheet
 
+**2026-10-07 (b):** word → pips gap halved again. `.wgt-chiprow` is now a flex row, so the chip no longer sits on a full-height text line (that strut was ~4px of empty space above the chip), `margin-top:-3px` was too tight, settled on `0` (about 9–10px gap).
+
+**2026-10-07:** phone-browser text bump. AnkiWeb renders at real device width (`width=device-width`), so the 14px `.mn`/`.gr` text set on 2026-09-23 really was 14px on a phone. A `max-width:600px` block raises `.card`/`.c`/`.mn`/`.gr`/chips there, skipping the phone apps via their `.mobile` class. Pinch-zoom on AnkiWeb resets on every card because the card re-renders; CSS cannot persist it, hence a fixed size instead.
+
+**2026-10-06 (v3.0.2):** the opening badge is hidden on the back (`.card .c > .fq:first-child`) and its Register / `gespr.:` / usage-warning segments render on the front as `.wgt-tag` chips under the pips, tinted per Gewicht (`--bg` = the pip chip's background, `--ink` = a darker shade of the dot colour). The word → pips gap was halved (`.wgt-chiprow` margin-top 8px → 0).
+
 **2026-09-23:** the `line-height` trick on `.c br + br` never really worked —
 an empty line can't be shorter than the parent's strut (`.c` line-height 1.6
 ≈ 26px), so each section gap stayed one to two full blank lines. The
@@ -89,7 +95,7 @@ hr#answer { margin-bottom:4px; }
 .gr { border-left:3px solid #42A5F5; padding-left:10px; margin:4px 0; }
 .bl { color:#1565C0; }
 .vl { color:#9C27B0; }
-.tl { color:#00838F; }   /* legacy only — use the tl-* classes below */
+.tl { color:#00838F; }
 .ex { color:#2E7D32; }
 .tl-nom { color:#00838F; }
 .tl-fw  { color:#BF360C; }
@@ -112,8 +118,6 @@ hr#answer { margin-bottom:4px; }
     border-radius:10px;
 }
 
-/* Anki night mode — the dark tones above are unreadable on a dark background.
-   Applies to legacy cards too, since the classes are the same. */
 .nightMode .fq  { background:#4E342E; color:#D7CCC8; }
 .nightMode .tr  { color:#aaa; }
 .nightMode .bl  { color:#64B5F6; }
@@ -126,6 +130,75 @@ hr#answer { margin-bottom:4px; }
 .nightMode .tl-syn { color:#4FC3F7; }
 .nightMode .tl-ant { color:#EF5350; }
 .nightMode .ver { color:#666; }
+
+/* Gewicht: label chip above the front word. Only on notes tagged Gewicht::rot|orange|gelb|grau;
+   the front-template script builds it. Untagged cards are unaffected. */
+.wgt-chiprow { margin-top:0; display:flex; justify-content:center; }
+.wgt-chip {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:6px 10px;
+    border-radius:10px;
+}
+.wgt-chip i {
+    display:block;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--dot);
+}
+.wgt-chip i.off { background:transparent; box-shadow:inset 0 0 0 1.5px var(--dot); }
+.wgt-chip.rot    { background:#FFEBEE; --dot:#E53935; }
+.wgt-chip.orange { background:#FFF3E0; --dot:#FB8C00; }
+.wgt-chip.gelb   { background:#FFF8E1; --dot:#F9A825; }
+.wgt-chip.grau   { background:#F1F1F1; --dot:#9E9E9E; }
+.nightMode .wgt-chip.rot    { background:#4A2326; --dot:#FF8A80; }
+.nightMode .wgt-chip.orange { background:#4A3118; --dot:#FFB74D; }
+.nightMode .wgt-chip.gelb   { background:#463F17; --dot:#FFEE58; }
+.nightMode .wgt-chip.grau   { background:#383838; --dot:#BDBDBD; }
+
+/* Register / gespr. / usage chips under the pips, tinted like the Gewicht chip. Built by the front-template
+   script from the badge text; the badge itself is hidden on the back. */
+.wgt-meta {
+    margin-top:4px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:5px;
+}
+.wgt-tag {
+    font-size:12px;
+    font-weight:600;
+    line-height:1.3;
+    letter-spacing:0.2px;
+    padding:3px 9px;
+    border-radius:10px;
+    background:var(--bg);
+    color:var(--ink);
+}
+.wgt-tag.sp, .wgt-tag.x { font-weight:400; }
+.wgt-tag.rot    { --bg:#FFEBEE; --ink:#C62828; }
+.wgt-tag.orange { --bg:#FFF3E0; --ink:#E65100; }
+.wgt-tag.gelb   { --bg:#FFF8E1; --ink:#8D6E00; }
+.wgt-tag.grau   { --bg:#F1F1F1; --ink:#616161; }
+.nightMode .wgt-tag.rot    { --bg:#4A2326; --ink:#FF8A80; }
+.nightMode .wgt-tag.orange { --bg:#4A3118; --ink:#FFB74D; }
+.nightMode .wgt-tag.gelb   { --bg:#463F17; --ink:#FFEE58; }
+.nightMode .wgt-tag.grau   { --bg:#383838; --ink:#BDBDBD; }
+/* Opening badge: shown on the front as chips now, so hidden on the back. Per-meaning badges inside .mn stay. */
+.card .c > .fq:first-child { display:none; }
+
+/* Phone browser (AnkiWeb): the sizes above are tuned for the desktop app and read too small on a phone.
+   Bigger text on narrow screens only; the phone apps (AnkiMobile/AnkiDroid tag the page .mobile) keep theirs. */
+@media (max-width:600px) {
+    :root:not(.mobile) .card:not(.mobile) { font-size:24px; }
+    :root:not(.mobile) .card:not(.mobile) .c { font-size:18px; }
+    :root:not(.mobile) .card:not(.mobile) .c > .mn,
+    :root:not(.mobile) .card:not(.mobile) .c > .gr { font-size:17px; }
+    :root:not(.mobile) .card:not(.mobile) .fq { font-size:12px; }
+    :root:not(.mobile) .card:not(.mobile) .wgt-tag { font-size:13px; }
+}
 
 details.fold {
     margin-top:4px;

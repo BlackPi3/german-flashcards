@@ -6,8 +6,8 @@
 # later, when you're not studying:
 #
 # Usage:
-#   ./loop.sh                     the overnight job: 60 runs of 10 legacy cards,
-#                                 logged to logs/, survives closing the terminal
+#   ./loop.sh                     the overnight job: 60 runs of 10 stale cards, oldest
+#                                 stamp first; logged to logs/, survives closing the terminal
 #   ./loop.sh <number-of-runs>    same, but stop after this many runs
 #   ./loop.sh status              what is staged and waiting
 #   ./loop.sh apply [--dry-run]   write everything staged into Anki (Anki must be open)
@@ -15,7 +15,7 @@
 # Tunables (env vars):
 #   MODEL          model to use              (default: sonnet)
 #   EFFORT         low|medium|high|xhigh|max (default: high)
-#   PROMPT         prompt sent each run      (default: 10 legacy cards, stage only)
+#   PROMPT         prompt sent each run      (default: 10 stale cards, oldest first, stage only)
 #   ALLOWED_TOOLS  tools the prompt may use  (default: Skill,Agent,Read,Write,Bash,
 #                  mcp__anki__find_notes,mcp__anki__notes_info)
 #   DENIED_TOOLS   hard-blocked (default: every Anki write tool, plus launching apps)
@@ -56,7 +56,7 @@ echo "logging to $LOG"
 
 MODEL="${MODEL:-sonnet}"
 EFFORT="${EFFORT:-high}"
-PROMPT="${PROMPT:-Use the flashcard-maintenance skill to stage 10 notes. Work only the unstamped legacy bucket. Do not apply.}"
+PROMPT="${PROMPT:-Use the flashcard-maintenance skill to stage 10 notes. Do not apply.}"
 ALLOWED_TOOLS="${ALLOWED_TOOLS:-Skill,Agent,Read,Write,Bash,mcp__anki__find_notes,mcp__anki__notes_info}"
 ANKI_WRITES="update_note_fields update_notes add_note add_notes tag_management delete_notes change_note_type"
 DENIED_DEFAULT=""
