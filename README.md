@@ -72,7 +72,7 @@ A separate card type, marked `⚙`, exists for grammar choices that no single
 word's card can teach on its own — which preposition a verb takes, `als` vs.
 `wenn`, that kind of fork between options.
 
-`export/einfach-besser-500-b2.jsonl` is a point-in-time dump of the whole
+`export/deutsch-alltag-it.jsonl` is a point-in-time dump of the whole
 deck — one JSON object per line, `{"front": ..., "back": ..., "tags": [...]}`,
 `back` being the raw card HTML above. It's the easiest way to see what's
 actually in the deck without opening Anki. It's a snapshot for browsing, not
@@ -228,7 +228,7 @@ loop.sh                                unattended overnight batch runner (just `
 logs/                                  run logs, incl. kept streams from failed runs (gitignored)
 docs/card-redesign.md                  design log behind the current card layout (closed/shipped)
 docs/project-summary.md                plain-language project summary (scope, scale, stack)
-export/einfach-besser-500-b2.jsonl     a point-in-time export of the deck
+export/deutsch-alltag-it.jsonl         a point-in-time export of the deck
 ```
 
 ## Requirements to run this yourself
