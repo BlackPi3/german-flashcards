@@ -42,8 +42,8 @@ APPLIED = ROOT / "applied"
 CONFLICTS = ROOT / "conflicts"
 
 ANKI_URL = "http://127.0.0.1:3141/"
-DECK = "Einfach Besser! 500 B2"
-MODEL = "Einfach Besser!"
+DECK = "Deutsch · Alltag & IT"
+MODEL = "Deutsch · Alltag & IT"
 MANAGED_PREFIXES = ("regeln::", "häufigkeit::", "register::", "gewicht::", "karte::")
 
 

@@ -4,6 +4,21 @@ Plain-language snapshot of what this project is and what it currently does.
 Written to be source material for a CV/resume update — current state only,
 no version history (see `CLAUDE.md`'s changelog for that).
 
+## CV entry (ready to paste)
+
+**German Anki Flashcards** | Claude Code, MCP, Python, Bash, HTML/CSS/JavaScript | github.com/BlackPi3/german-flashcards
+
+- Designed an agentic LLM workflow that turns German texts and textbook photos into structured flashcards and writes them directly to a live Anki database via MCP; generated 2,800+ cards.
+- Engineered a 26-rule, semantically versioned prompt specification and split operational procedures into on-demand skills to keep the LLM's context lean.
+- Developed a shared HTML/CSS/JavaScript card template that renders each card from its metadata at view time, so design changes reach all 2,800+ records without a data migration.
+- Built a staged-write pipeline in Python and Bash for regenerating outdated cards, with LLM output validation, optimistic concurrency control, human approval before release, and rate-limit-aware batch orchestration of subagents.
+
+Cover-letter version:
+
+> In a personal project, I built an agentic LLM workflow with Claude Code that generates German flashcards from texts and textbook photos and writes them directly to a live Anki database via MCP; it has produced more than 2,800 cards so far. Most of the work went into making the LLM's output reliable: a versioned prompt specification it follows on every card, and a staged-write pipeline that validates the output and only pushes changes live after I approve them. The project taught me to treat LLM output as untrusted input that has to be checked before it is used.
+
+Keep every claim checkable against the repo. Deliberately left out as overstatements: "multimodal/vision OCR" (the model's ability, not built here), "multi-agent system" (it is one subagent per batch), RAG, fine-tuning, evals, and "custom MCP server" (the server is an Anki add-on; this repo contains the client).
+
 ## What it is
 
 A personal German-vocabulary learning system built on top of Claude Code and
@@ -15,6 +30,8 @@ into a live spaced-repetition deck — no export file, no manual import step.
 ## Scale
 
 - **2,800+ flashcards** in active use, spaced-repetition reviewed daily.
+- **Published** as a free public deck on AnkiWeb (*Deutsch · Alltag & IT*),
+  with an open invitation for contributors via GitHub issues and pull requests.
 - **1,050** tagged as top-priority (core spoken German or IT/work vocabulary).
 - **83** IT/software-specific vocabulary cards (reflecting real work usage).
 - **23** dedicated grammar-contrast cards for rules that trip up learners
@@ -57,7 +74,7 @@ into a live spaced-repetition deck — no export file, no manual import step.
 
 ## Stack
 
-Claude Code (LLM-driven generation + orchestration) · Anki + a custom MCP
+Claude Code (LLM-driven generation + orchestration) · Anki + an MCP
 server (data store, spaced-repetition scheduling, rendering) · Python
 (staging/validation tooling) · Bash (unattended batch runner) · HTML/CSS/JS
 (card template and rendering logic).

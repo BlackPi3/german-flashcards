@@ -1,9 +1,9 @@
-# Anki stylesheet — `Einfach Besser!` note type
+# Anki stylesheet — `Deutsch · Alltag & IT` note type
 
 Reference copy. **The authoritative version lives in Anki**, in the note type's
 *Styling* box. This file is a mirror kept for version history and for editing
 offline — if the two ever disagree, Anki is right. Read it back with the MCP
-call `model_styling(model_name="Einfach Besser!")`, write it with
+call `model_styling(model_name="Deutsch · Alltag & IT")`, write it with
 `update_model_styling`.
 
 Moved out of `CLAUDE.md` on 2026-08-11: it is only consulted when changing the
@@ -245,7 +245,7 @@ relying on `::marker` across versions. Colour is a neutral blue-grey,
 deliberately outside the `tl-*` palette so it doesn't compete with any of
 them once expanded. The card template's `Q` keyboard shortcut and its
 `<script>` for building the fold are unchanged in mechanism — see
-`model_templates(model_name="Einfach Besser!")` — only `TAIL_CLASSES` (now
+`model_templates(model_name="Deutsch · Alltag & IT")` — only `TAIL_CLASSES` (now
 including `'vl'`), the dropped back-shift, and the summary text (now generic:
 "Mehr anzeigen (Taste: Q)", since the fold no longer covers only Wendungen/
 Synonyme/Antonyme) changed.

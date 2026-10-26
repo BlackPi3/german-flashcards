@@ -9,6 +9,13 @@ straight into a live Anki collection — no CSV export, no manual import.
 vocabulary (the deck's highest-priority tier), 83 IT-specific cards, 23
 grammar-contrast (`⚙`) cards.
 
+**Public deck:** *Deutsch · Alltag & IT* is shared on AnkiWeb —
+[ankiweb.net/shared/info/1619784932](https://ankiweb.net/shared/info/1619784932).
+Contributions are welcome: open an issue here for an unnatural example, a
+wrong translation, or a word you keep running into at work or in daily life.
+Rule changes go through a pull request against `CLAUDE.md`, so every card
+keeps following the same rulebook.
+
 **Current focus: spoken German.** Vocabulary I'd actually use in conversation
 (plus anything IT/software-related, since that's my work) gets full cards.
 Formal, bureaucratic, or rare vocabulary still gets a card if it came up
@@ -23,9 +30,9 @@ then the back — first collapsed, then with the reference tail expanded via
 the `Q` shortcut:
 
 <table>
-<tr><td><img src="docs/images/card-front.png" width="280" alt="Card front: the German word 'Sorge'"></td>
+<tr><td><img src="docs/images/card-front.png" width="280" alt="Card front: the German word 'Einsatz' with four red pips and chips 'neutral' and 'gespr.: Mühe / sich Mühe geben'"></td>
 <td><img src="docs/images/card-back-collapsed.png" width="280" alt="Card back, fold collapsed"></td>
-<td><img src="docs/images/card-back-expanded.png" width="280" alt="Card back, fold expanded showing Feste Wendungen, NVV, Synonym, Antonym"></td></tr>
+<td><img src="docs/images/card-back-expanded.png" width="280" alt="Card back, fold expanded showing valency patterns, Feste Wendung, Kollokation, Synonym"></td></tr>
 <tr><td align="center">front</td><td align="center">back — fold collapsed</td><td align="center">back — fold expanded (<code>Q</code>)</td></tr>
 </table>
 
@@ -90,7 +97,7 @@ you want to study these cards, or change the structure yourself, this is
 what to set up:
 
 1. **Clone `Basic`.** In Anki: `Tools → Manage Note Types → Add → Clone: Basic`.
-   Name it whatever you like (the deck here uses `Einfach Besser!`). It keeps
+   Name it whatever you like (the deck here uses `Deutsch · Alltag & IT`). It keeps
    the two fields `Front` and `Back` and the one template, `Card 1` —
    nothing to add or remove.
 2. **Paste the stylesheet.** Open the note type → `Cards…` → *Styling* box →

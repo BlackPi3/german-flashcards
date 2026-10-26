@@ -101,7 +101,7 @@ Image of a multiple-choice exercise with blanks; target words marked with red un
 ## Output
 
 - Cards are created and edited directly in the Anki collection via the Anki MCP connector — no intermediate file, no manual import step.
-- Target deck: **`Einfach Besser! 500 B2`**. Note type: **`Einfach Besser!`**, fields `Front` / `Back`.
+- Target deck: **`Deutsch · Alltag & IT`**. Note type: **`Deutsch · Alltag & IT`**, fields `Front` / `Back`.
 - New card → `add_note` (`deck_name`, `model_name`, `fields: {Front, Back}`, `tags` as a list — see Tags).
 - Rebuilding an existing card → `update_note_fields` on its note id to replace `Back` (front stays put unless Rule 15a applies), plus `tag_management` (`add_tags` / `replace_tags`) to bring its tags current.
 - `Back` HTML can be written as readable multi-line text — the field tolerates embedded newlines fine. `<br>` is still what produces the visible line break inside the rendered card (Rule 12), so structural breaks still need it explicitly, regardless of how the source is formatted.
@@ -453,7 +453,7 @@ add_note(..., tags=["Regeln::v3.0.2", "Karte::Grammatik"])   # ⚙ card
 ## Duplicate Detection
 
 - Anki is the single source of truth — there's no separate word list to keep in sync.
-- Before creating a card: `find_notes` with `deck:"Einfach Besser! 500 B2" Front:<word>`. Anki's search is case-insensitive, so this alone covers the case-insensitive check the old workflow needed a manual step for.
+- Before creating a card: `find_notes` with `deck:"Deutsch · Alltag & IT" Front:<word>`. Anki's search is case-insensitive, so this alone covers the case-insensitive check the old workflow needed a manual step for.
 - Duplicate → skip, note in the summary as ⏭.
 - Nothing to update afterward — the deck itself is always current.
 

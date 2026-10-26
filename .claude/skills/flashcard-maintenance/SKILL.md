@@ -1,11 +1,11 @@
 ---
 name: flashcard-maintenance
-description: Migrate stale notes in the Anki deck "Einfach Besser! 500 B2" up to CLAUDE.md's current Rules Version. Rebuilds are staged as local files under staged/ instead of being written to Anki, so the user can keep studying; `apply` pushes them into Anki on command. Takes the number of notes to process this run as an argument (default 10), or `apply` / `status`; counts above 10 are split into batches of 10, one subagent per batch. Use when the user asks to continue backlog maintenance, rework stale cards, bring the deck up to the current rules version, or apply/submit staged maintenance changes.
+description: Migrate stale notes in the Anki deck "Deutsch · Alltag & IT" up to CLAUDE.md's current Rules Version. Rebuilds are staged as local files under staged/ instead of being written to Anki, so the user can keep studying; `apply` pushes them into Anki on command. Takes the number of notes to process this run as an argument (default 10), or `apply` / `status`; counts above 10 are split into batches of 10, one subagent per batch. Use when the user asks to continue backlog maintenance, rework stale cards, bring the deck up to the current rules version, or apply/submit staged maintenance changes.
 ---
 
 # Flashcard backlog maintenance
 
-Bring notes in `Einfach Besser! 500 B2` up to the Rules Version current in
+Bring notes in `Deutsch · Alltag & IT` up to the Rules Version current in
 `CLAUDE.md`. CLAUDE.md is the sole authority on card content — this file only
 describes the *migration mechanism*.
 
@@ -100,7 +100,7 @@ before moving to the next.
 
 **Exclude everything already staged.** Run `python3 anki_stage.py ids` once
 per batch and, if it prints anything, append `-nid:<that list>` to every query
-below (e.g. `deck:"Einfach Besser! 500 B2" -nid:123,456 "Back:*<span class=\"ver\">v1.0.0</span>*"`). A
+below (e.g. `deck:"Deutsch · Alltag & IT" -nid:123,456 "Back:*<span class=\"ver\">v1.0.0</span>*"`). A
 staged note still carries its old stamp in Anki; without the exclusion it gets
 rebuilt twice. Counts reported to the user are likewise *after* exclusion.
 
@@ -108,7 +108,7 @@ rebuilt twice. Counts reported to the user are likewise *after* exclusion.
 fronts of cards the user flagged as thin or wrong — a card can be at `VCUR` and
 still be thin, so the version buckets below never find it. Read the file
 (ignore blank lines and lines starting with `#`), look each front up with
-`find_notes` (`deck:"Einfach Besser! 500 B2" "Front:<front>"`, after the
+`find_notes` (`deck:"Deutsch · Alltag & IT" "Front:<front>"`, after the
 staged-id exclusion), and take those notes ahead of any bucket, up to the
 batch size. Once a rebuild is **staged**, delete its line from `rebuild.txt`;
 if a staged rebuild later lands in `staged/conflicts/`, put its front back.
@@ -121,7 +121,7 @@ older than current. Work it oldest first, as buckets.
 
 **Build the buckets each run; never hardcode them.** List every version in
 `changelog.md` (the `- **X.Y.Z**` entries) that is lower than `VCUR`, sort
-ascending, and query in this order (each after `deck:"Einfach Besser! 500 B2"`
+ascending, and query in this order (each after `deck:"Deutsch · Alltag & IT"`
 and the staged-id exclusion):
 
 | Order | Query | Bucket |
@@ -151,7 +151,7 @@ query string sent to `find_notes`, not markdown.** Dropping them breaks Anki's
 parser silently: `-Back:*class="ver"*` returns almost the whole deck, stamped
 notes included, with no error. So sanity-check once per run before pulling a
 batch: the legacy count plus the stamped count (`"Back:*class=\"ver\"*"`) must
-equal the deck total (`deck:"Einfach Besser! 500 B2"` alone). If they don't, or
+equal the deck total (`deck:"Deutsch · Alltag & IT"` alone). If they don't, or
 the legacy bucket comes back near the deck total, the query is malformed — fix
 it before taking any notes, never stage from it.
 
@@ -183,12 +183,12 @@ directions on every v2.0.0 note, so either can be trusted for that bucket.
 > legacy card and a v1.6.2 card are both simply "no tag". Every note this skill
 > touches gets a `Regeln::` tag, so that number only goes down.
 >
-> **When `deck:"Einfach Besser! 500 B2" -tag:Regeln::*` returns 0, replace the
+> **When `deck:"Deutsch · Alltag & IT" -tag:Regeln::*` returns 0, replace the
 > buckets with tag queries and delete this note.** Finding the oldest is then one tag query sorted by
 > its `Regeln::` subtag, and no `Back` field search is ever needed again:
 >
 > ```
-> deck:"Einfach Besser! 500 B2" -tag:Regeln::vVCUR
+> deck:"Deutsch · Alltag & IT" -tag:Regeln::vVCUR
 > ```
 >
 > Check the count at the start of a run; it is cheap and the switch-over should

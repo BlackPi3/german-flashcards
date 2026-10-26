@@ -1,9 +1,9 @@
-# Anki card templates — `Einfach Besser!` note type
+# Anki card templates — `Deutsch · Alltag & IT` note type
 
 Reference copy. **The authoritative version lives in Anki**, in the note
 type's *Cards…* editor. This file is a mirror kept for version history and
 for editing offline — if the two ever disagree, Anki is right. Read it back
-with the MCP call `model_templates(model_name="Einfach Besser!")`, write it
+with the MCP call `model_templates(model_name="Deutsch · Alltag & IT")`, write it
 with `update_model_templates`.
 
 The note type is a clone of Anki's built-in **Basic**: two fields (`Front`,
